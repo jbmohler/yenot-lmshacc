@@ -1,7 +1,5 @@
 create extension if not exists "uuid-ossp";
 
-drop schema if exists hacc cascade;
-
 create schema hacc;
 
 create table hacc.accounttypes (
