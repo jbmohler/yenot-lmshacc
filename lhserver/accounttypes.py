@@ -1,3 +1,4 @@
+import uuid
 import yenot.backend.api as api
 
 app = api.get_global_app()
@@ -27,7 +28,9 @@ where false"""
     results = api.Results()
     with app.dbconn() as conn:
         columns, rows = api.sql_tab2(conn, select)
-        rows = [(None,)*len(columns)]
+        def default_row(index, row):
+            row.id = str(uuid.uuid1())
+        rows = api.tab2_rows_default(columns, [None], default_row)
         results.tables['accounttype', True] = columns, rows
     return results.json_out()
 

@@ -5,6 +5,21 @@ import yenot.backend.api as api
 
 app = api.get_global_app()
 
+@app.get('/api/transactions/years', name='get_api_transactions_years', \
+        report_title='Transaction Years')
+def get_api_transactions_years():
+    select = """
+select date_part('year', trandate)::int as year, count(*)
+from hacc.transactions
+group by date_part('year', trandate)::int
+order by date_part('year', trandate)::int
+"""
+
+    results = api.Results(default_title=True)
+    with app.dbconn() as conn:
+        results.tables['years', True] = api.sql_tab2(conn, select, None, None)
+    return results.json_out()
+
 def get_api_transactions_list_prompts():
     return api.PromptList(
             account=api.cgen.pyhacc_account.name(),
