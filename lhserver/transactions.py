@@ -147,7 +147,7 @@ def get_api_transaction(t_id):
 @app.put('/api/transaction/<t_id>', name='put_api_transaction')
 def put_api_transaction(t_id):
     trans = api.table_from_tab2('trans', amendments=['tid'], allow_extra=True)
-    splits = api.table_from_tab2('splits', amendments=['stid', 'sid'], allow_extra=True)
+    splits = api.table_from_tab2('splits', amendments=['stid', 'sid'], required=['account_id', 'sum'])
 
     for row in trans.rows:
         row.tid = t_id

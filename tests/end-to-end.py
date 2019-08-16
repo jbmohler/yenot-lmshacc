@@ -93,6 +93,83 @@ def test_crud_accounts(srvparams):
 
         session.close()
 
+def test_prep_data(srvparams):
+    with yenot.tests.server_running(**srvparams) as server:
+        session = yclient.YenotSession(server.url)
+        client = session.std_client()
+
+        jrncontent = client.get('api/journals/list')
+        jrn = next(iter(jrncontent.main_table().rows))
+
+        types = [
+                dict(name='Asset', balance_sheet=True, debit=True),
+                dict(name='Liability', balance_sheet=True, debit=False),
+                dict(name='Capital', balance_sheet=True, debit=False),
+                dict(name='Revenue', balance_sheet=False, debit=False),
+                dict(name='Expense', balance_sheet=False, debit=True)]
+
+        for tt in types:
+            atcontent = client.get('api/accounttype/new')
+            acctable = atcontent.named_table('accounttype')
+            atrow = acctable.rows[0]
+            atrow.atype_name = tt['name']
+            atrow.balance_sheet = tt['balance_sheet']
+            atrow.debit = tt['debit']
+
+            client.put('api/accounttype/{}', atrow.id, files={'accounttype': acctable.as_http_post_file()})
+
+            if tt['name'] == 'Asset':
+                content = client.get('api/account/new')
+                acctable = content.named_table('account')
+                accrow = acctable.rows[0]
+                accrow.type_id = atrow.id
+                accrow.journal_id = jrn.id
+                accrow.acc_name = 'Cash'
+
+                client.put('api/account/{}', accrow.id, files={'account': acctable.as_http_post_file()})
+            if tt['name'] == 'Expense':
+                content = client.get('api/account/new')
+                acctable = content.named_table('account')
+                accrow = acctable.rows[0]
+                accrow.type_id = atrow.id
+                accrow.journal_id = jrn.id
+                accrow.acc_name = 'Food'
+
+                client.put('api/account/{}', accrow.id, files={'account': acctable.as_http_post_file()})
+
+
+        session.close()
+
+def test_crud_transactions(srvparams):
+    with yenot.tests.server_running(**srvparams) as server:
+        session = yclient.YenotSession(server.url)
+        client = session.std_client()
+
+        acccontent = client.get('api/accounts/list')
+        accs = acccontent.main_table()
+
+        cash = next(row for row in accs.rows if row.account == 'Cash')
+        food = next(row for row in accs.rows if row.account == 'Food')
+
+        content = client.get('api/transaction/new')
+        acctable = content.named_table('trans')
+        sptable = content.named_table('splits')
+        r2 = acctable.rows[0]
+        r2.trandate = '2018-12-01'
+        r2.payee = 'Dairy Queen'
+        r2.memo = 'Milk Shake'
+        with sptable.adding_row() as r2:
+            r2.account_id = cash.id
+            r2.sum = -5.25
+        with sptable.adding_row() as r2:
+            r2.account_id = food.id
+            r2.sum = 5.25
+        client.put('api/transaction/{}', acctable.rows[0].tid, files={
+                    'trans': acctable.as_http_post_file(),
+                    'splits': sptable.as_http_post_file(inclusions=['account_id', 'sum'])})
+
+        session.close()
+
 def test_financial_reports(srvparams):
     with yenot.tests.server_running(**srvparams) as server:
         session = yclient.YenotSession(server.url)
@@ -126,5 +203,7 @@ if __name__ == '__main__':
     test_crud_accounttypes(srvparams)
     test_crud_journals(srvparams)
     test_crud_accounts(srvparams)
+    test_prep_data(srvparams)
+    test_crud_transactions(srvparams)
     test_basic_lists(srvparams)
     test_financial_reports(srvparams)
