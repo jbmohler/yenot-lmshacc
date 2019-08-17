@@ -7,11 +7,6 @@ import yenot.backend.api as api
 
 app = api.get_global_app()
 
-def dc_values(debit, debit_amt):
-    d = debit_amt if debit else None
-    c = -debit_amt if not debit else None
-    return d, c
-
 def dcb_values(debit, debit_amt):
     d = debit_amt if debit else None
     c = -debit_amt if not debit else None
@@ -76,7 +71,7 @@ join hacc.journals on journals.id=accounts.journal_id
 
         columns = api.tab2_columns_transform(data[0], insert=[('debit', 'credit', 'balance')], column_map=cm)
         def transform_dc(oldrow, row):
-            d, c, b = dcb_values(row.debit, row.debit_account)
+            d, c, b = dcb_values(row.debit_account, row.debit)
             row.debit = d
             row.credit = c
             row.balance = b
@@ -148,17 +143,18 @@ join hacc.journals on journals.id=accounts.journal_id
 
         columns = [
                 ('id', api.cgen.pyhacc_account.surrogate()),
-                ('acc_name', api.cgen.pyhacc_account.name(url_key='id')),
+                ('acc_name', api.cgen.pyhacc_account.name(url_key='id', label='Account')),
                 ('atype_sort', api.cgen.auto(hidden=True)),
                 ('debit_account', api.cgen.boolean(hidden=True)),
-                ('atype_name', api.cgen.pyhacc_accounttype.name()),
+                ('atype_name', api.cgen.pyhacc_accounttype.name(label='Account Type')),
                 ('jrn_id', api.cgen.pyhacc_journal.surrogate()),
-                ('jrn_name', api.cgen.pyhacc_journal.name(url_key='jrn_id'))]
+                ('jrn_name', api.cgen.pyhacc_journal.name(url_key='jrn_id', label='Journal'))]
         for index, dates in enumerate(date_ranges):
             d1, d2 = dates
             columns += [
-                    ('debit_{}'.format(index+1), api.cgen.currency_usd(label='{}\nDebit'.format(d2))),
-                    ('credit_{}'.format(index+1), api.cgen.currency_usd(label='{}\nCredit'.format(d2)))]
+                    ('debit_{}'.format(index+1), api.cgen.currency_usd(label='{}\nDebit'.format(d2), hidden=True)),
+                    ('credit_{}'.format(index+1), api.cgen.currency_usd(label='{}\nCredit'.format(d2), hidden=True)),
+                    ('balance_{}'.format(index+1), api.cgen.currency_usd(label='{}\nBalance'.format(d2)))]
 
         accrefs = list(accounts.values())
         accrefs.sort(key=lambda x: (x.atype_sort, x.acc_name))
@@ -177,9 +173,10 @@ join hacc.journals on journals.id=accounts.journal_id
                 for index, iset in enumerate(intsets):
                     arow = iset.get(acc.id, None)
                     if arow != None:
-                        d, c = dc_values(arow.debit_account, arow.debit)
+                        d, c, b = dcb_values(arow.debit_account, arow.debit)
                         setattr(row, 'debit_{}'.format(index+1), d)
                         setattr(row, 'credit_{}'.format(index+1), c)
+                        setattr(row, 'balance_{}'.format(index+1), b)
 
         cm = {attr: values for attr, values in columns}
         results.tables['balances', True] = rtable.as_tab2(column_map=cm)
