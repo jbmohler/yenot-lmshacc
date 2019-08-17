@@ -221,7 +221,7 @@ order by
 
 def get_api_gledger_multi_balance_sheet_prompts():
     d = datetime.date.today()
-    d1 = api.the_first(d) - datetime.timedelta(days=1)
+    d1 = boa.the_first(d) - datetime.timedelta(days=1)
     months = [(datetime.date(2020, i, 1).strftime('%B'), i) for i in range(1, 13)]
     return api.PromptList(\
             year=api.cgen.basic(default=str(d1.year)),
