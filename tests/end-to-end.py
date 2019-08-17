@@ -177,10 +177,6 @@ def test_financial_reports(srvparams):
 
         client.get('api/gledger/unbalanced-trans')
         client.get('api/gledger/balance-sheet', date1='2019-12-31')
-        client.get('api/gledger/triple-balance-sheet', 
-                d1='2016-12-31',
-                d2='2018-12-31',
-                d3='2019-12-31')
         client.get('api/gledger/multi-balance-sheet', 
                 year=2019, month_end=6, count=4)
         client.get('api/gledger/profit-and-loss',
