@@ -8,6 +8,8 @@ import yenot.backend.api as api
 app = api.get_global_app()
 
 def dcb_values(debit, debit_amt):
+    if debit_amt == None:
+        return None, None, None
     d = debit_amt if debit else None
     c = -debit_amt if not debit else None
     b = debit_amt * (1 if debit else -1) if debit_amt != None else None
@@ -116,6 +118,7 @@ with /*BAL_N_CTE*/
 select 
     /*COALESCE_COL(id)*/ as id,
     /*COALESCE_COL(acc_name)*/ as acc_name,
+    /*COALESCE_COL(description)*/ as description,
     /*COALESCE_COL(atype_name)*/ as atype_name,
     /*COALESCE_COL(atype_sort)*/ as atype_sort,
     /*COALESCE_COL(debit_account)*/ as debit_account,
@@ -170,6 +173,7 @@ order by
         cm = api.ColumnMap(\
                 id=api.cgen.pyhacc_account.surrogate(),
                 acc_name=api.cgen.pyhacc_account.name(label='Account', url_key='id', represents=True),
+                description=api.cgen.auto(),
                 atype_name=api.cgen.pyhacc_accounttype.name(label='Type'),
                 atype_sort=api.cgen.auto(hidden=True),
                 debit_account=api.cgen.auto(hidden=True),

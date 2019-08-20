@@ -4,6 +4,31 @@ import yenot.backend.api as api
 
 app = api.get_global_app()
 
+@app.get('/api/accounts/by-reference', name='get_api_accounts_by_reference')
+def get_api_accounts_by_reference():
+    reference = request.query.get('reference')
+
+    select = """
+select accounts.id, 
+    accounttypes.atype_name as type, 
+    accounttypes.balance_sheet,
+    accounttypes.debit,
+    accounts.acc_name as account,
+    accounts.description
+from hacc.accounts
+join hacc.accounttypes on accounttypes.id=accounts.type_id
+where acc_name=%(ref)s"""
+
+    params = {'ref': reference}
+
+    results = api.Results()
+    with app.dbconn() as conn:
+        cm = api.ColumnMap(\
+                id=api.cgen.pyhacc_account.surrogate(),
+                account=api.cgen.pyhacc_account.name(url_key='id', represents=True))
+        results.tables['account', True] = api.sql_tab2(conn, select, params, cm)
+    return results.json_out()
+
 @app.get('/api/accounts/completions', name='get_api_accounts_completions')
 def get_api_accounts_completions():
     prefix = request.query.get('prefix')

@@ -41,6 +41,7 @@ with deltas as (
     having sum(splits.sum)<>0
 )
 select accounts.id, accounts.acc_name, 
+    split_part(accounts.description, '\n', 1) as description, 
     accounttypes.sort as atype_sort,
     accounttypes.debit as debit_account, 
     accounttypes.atype_name, 
@@ -111,6 +112,7 @@ with deltas as (
     having sum(splits.sum)<>0
 )
 select accounts.id, accounts.acc_name, 
+    split_part(accounts.description, '\n', 1) as description, 
     accounttypes.sort as atype_sort,
     accounttypes.debit as debit_account, 
     accounttypes.atype_name, 
@@ -144,6 +146,7 @@ join hacc.journals on journals.id=accounts.journal_id
         columns = [
                 ('id', api.cgen.pyhacc_account.surrogate()),
                 ('acc_name', api.cgen.pyhacc_account.name(url_key='id', label='Account')),
+                ('description', api.cgen.auto()),
                 ('atype_sort', api.cgen.auto(hidden=True)),
                 ('debit_account', api.cgen.boolean(hidden=True)),
                 ('atype_name', api.cgen.pyhacc_accounttype.name(label='Account Type')),
@@ -165,6 +168,7 @@ join hacc.journals on journals.id=accounts.journal_id
             with rtable.adding_row() as row:
                 row.id = acc.id
                 row.acc_name = acc.acc_name
+                row.description = acc.description
                 row.atype_sort = acc.atype_sort
                 row.debit_account = acc.debit_account
                 row.atype_name = acc.atype_name
