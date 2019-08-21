@@ -22,7 +22,7 @@ order by date_part('year', trandate)::int
 
 def get_api_transactions_list_prompts():
     return api.PromptList(
-            account=api.cgen.pyhacc_account.name(),
+            account=api.cgen.pyhacc_account.id(),
             acctype=api.cgen.pyhacc_accounttype.id(label='Account Type'),
             date1=api.cgen.date(label='Start Date', relevance=('date2', 'end-range', None)),
             date2=api.cgen.date(label='End Date'),
@@ -65,8 +65,8 @@ where /*WHERE*/
         wheres.append("accounts.type_id=%(acctype)s")
         params['acctype'] = acctype
 
-    if account not in ['', None]:
-        wheres.append("accounts.acc_name=%(account)s")
+    if account != None:
+        wheres.append("accounts.id=%(account)s")
         params['account'] = account
 
     if memo_frag not in ['', None]:
@@ -80,11 +80,18 @@ where /*WHERE*/
     select = select.replace("/*WHERE*/", " and ".join(wheres))
 
     results = api.Results(default_title=True)
+    results.key_labels += 'Date:  {} -- {}'.format(date1, date2)
     with app.dbconn() as conn:
         cm = api.ColumnMap(
             tid=api.cgen.pyhacc_transaction.surrogate(),
-            id=api.cgen.pyhacc_account.surrogate())
+            id=api.cgen.pyhacc_account.surrogate(),
+            acc_name=api.cgen.pyhacc_account.name(url_key='id', label='Account', hidden=(account!=None)),
+            amount=api.cgen.currency_usd())
         results.tables['trans', True] = api.sql_tab2(conn, select, params, cm)
+        if account != None:
+            accname = api.sql_1row(conn, "select acc_name from hacc.accounts where id=%(s)s", {'s': account})
+            results.key_labels += 'Account:  {}'.format(accname)
+    results.keys['report-formats'] = ['gl_summarize_total']
     return results.json_out()
 
 def _get_api_transaction(tid=None, newrow=False):

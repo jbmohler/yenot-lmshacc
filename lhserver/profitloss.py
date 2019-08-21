@@ -57,6 +57,7 @@ join hacc.journals on journals.id=accounts.journal_id
             'd1': date1,
             'd2': date2}
     results = api.Results(default_title=True)
+    results.key_labels += 'Date:  {} -- {}'.format(date1, date2)
     with app.dbconn() as conn:
         cm = api.ColumnMap(\
                 id=api.cgen.pyhacc_account.surrogate(),
@@ -133,6 +134,7 @@ join hacc.journals on journals.id=accounts.journal_id
         date_ranges.append((dprior, boa.month_end(dcurr)))
 
     results = api.Results(default_title=True)
+    results.key_labels += 'Date:  {} -- {}'.format(date_ranges[0][0], date_ranges[-1][1])
     with app.dbconn() as conn:
         intervals = [api.sql_rows(conn, select, {'d1': d1, 'd2': d2}) for d1, d2 in date_ranges]
 
@@ -205,7 +207,11 @@ select
     transactions.tid, 
     transactions.trandate as date, 
     transactions.tranref as reference, 
+    accounttypes.sort as atype_sort,
+    accounttypes.atype_name,
     accounts.id, accounts.acc_name,
+    journals.id as jrn_id,
+    journals.jrn_name, 
     transactions.payee, 
     transactions.memo, 
     case when splits.sum>=0 then splits.sum end as debit,
@@ -214,6 +220,7 @@ from hacc.transactions
 join hacc.splits on splits.stid=transactions.tid
 join hacc.accounts on splits.account_id=accounts.id
 join hacc.accounttypes on accounttypes.id=accounts.type_id
+join hacc.journals on journals.id=accounts.journal_id
 where /*WHERE*/
 """
 
@@ -227,11 +234,19 @@ where /*WHERE*/
     select = select.replace("/*WHERE*/", " and ".join(wheres))
 
     results = api.Results(default_title=True)
+    results.key_labels += 'Date:  {} -- {}'.format(date1, date2)
     with app.dbconn() as conn:
         cm = api.ColumnMap(
             tid=api.cgen.pyhacc_transaction.surrogate(),
+            atype_sort=api.cgen.auto(hidden=True),
+            atype_name=api.cgen.pyhacc_accounttype.name(label='Account Type'),
             id=api.cgen.pyhacc_account.surrogate(),
+            acc_name=api.cgen.pyhacc_account.name(url_key='id', label='Account'),
+            jrn_id=api.cgen.pyhacc_journal.surrogate(),
+            jrn_name=api.cgen.pyhacc_journal.name(url_key='jrn_id', label='Journal'),
             debit=api.cgen.currency_usd(),
             credit=api.cgen.currency_usd())
         results.tables['trans', True] = api.sql_tab2(conn, select, params, cm)
+
+    results.keys['report-formats'] = ['gl_summarize_by_type']
     return results.json_out()

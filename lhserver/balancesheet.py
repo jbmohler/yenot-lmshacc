@@ -65,6 +65,7 @@ def get_api_gledger_balance_sheet():
     select = BALANCE_SHEET_AT_D
 
     results = api.Results(default_title=True)
+    results.key_labels += 'Date:  {}'.format(date)
     with app.dbconn() as conn:
         cm = api.ColumnMap(\
                 id=api.cgen.pyhacc_account.surrogate(),
@@ -159,6 +160,7 @@ order by
     select = re.sub(r"/\*COALESCE_COL\(([a-z0-9_]+)\)\*/", coalfunc, select)
 
     results = api.Results(default_title=True)
+    results.key_labels += 'Date:  {} and {} annual comparisons'.format(params['d0'], count-1)
     with app.dbconn() as conn:
         inserts = []
         colkwargs = {}
