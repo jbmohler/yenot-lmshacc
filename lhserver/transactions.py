@@ -48,11 +48,14 @@ select
     accounts.id, accounts.acc_name,
     transactions.payee, 
     transactions.memo, 
-    splits.sum as amount
+    case when splits.sum>=0 then splits.sum end as debit,
+    case when splits.sum<0 then -splits.sum end as credit
 from hacc.transactions
 join hacc.splits on splits.stid=transactions.tid
 join hacc.accounts on splits.account_id=accounts.id
 where /*WHERE*/
+order by transactions.trandate, transactions.tranref, 
+    transactions.payee, transactions.memo, accounts.acc_name
 """
 
     wheres = [
@@ -86,7 +89,8 @@ where /*WHERE*/
             tid=api.cgen.pyhacc_transaction.surrogate(),
             id=api.cgen.pyhacc_account.surrogate(),
             acc_name=api.cgen.pyhacc_account.name(url_key='id', label='Account', hidden=(account!=None)),
-            amount=api.cgen.currency_usd())
+            debit=api.cgen.currency_usd(),
+            credit=api.cgen.currency_usd())
         results.tables['trans', True] = api.sql_tab2(conn, select, params, cm)
         if account != None:
             accname = api.sql_1row(conn, "select acc_name from hacc.accounts where id=%(s)s", {'s': account})

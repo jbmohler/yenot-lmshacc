@@ -137,6 +137,13 @@ def test_prep_data(srvparams):
 
                 client.put('api/account/{}', accrow.id, files={'account': acctable.as_http_post_file()})
 
+        content = client.get('api/accounts/by-reference', reference='Food')
+        account = content.main_table().rows[0]
+        assert account.account == 'Food'
+
+        content = client.get('api/accounts/completions', prefix='Fo')
+        account = content.main_table().rows[0]
+        assert account.acc_name == 'Food'
 
         session.close()
 

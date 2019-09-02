@@ -215,13 +215,16 @@ select
     transactions.payee, 
     transactions.memo, 
     case when splits.sum>=0 then splits.sum end as debit,
-    case when splits.sum<0 then splits.sum end as credit
+    case when splits.sum<0 then -splits.sum end as credit
 from hacc.transactions
 join hacc.splits on splits.stid=transactions.tid
 join hacc.accounts on splits.account_id=accounts.id
 join hacc.accounttypes on accounttypes.id=accounts.type_id
 join hacc.journals on journals.id=accounts.journal_id
 where /*WHERE*/
+order by accounttypes.sort, transactions.trandate, 
+    transactions.tranref, 
+    transactions.payee, transactions.memo, accounts.acc_name
 """
 
     wheres = [
