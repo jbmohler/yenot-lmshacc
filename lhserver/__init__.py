@@ -1,3 +1,4 @@
+from . import general
 from . import accounts
 from . import accounttypes
 from . import journals

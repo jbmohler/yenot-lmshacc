@@ -40,8 +40,9 @@ with deltas as (
     group by accounts.id, accounts.type_id
     having sum(splits.sum)<>0
 )
-select accounts.id, accounts.acc_name, 
+select
     split_part(accounts.description, '\n', 1) as description, 
+    accounts.id, accounts.acc_name, 
     accounttypes.sort as atype_sort,
     accounttypes.debit as debit_account, 
     accounttypes.atype_name, 
@@ -112,8 +113,9 @@ with deltas as (
     group by accounts.id, accounts.type_id
     having sum(splits.sum)<>0
 )
-select accounts.id, accounts.acc_name, 
+select
     split_part(accounts.description, '\n', 1) as description, 
+    accounts.id, accounts.acc_name, 
     accounttypes.sort as atype_sort,
     accounttypes.debit as debit_account, 
     accounttypes.atype_name, 
@@ -146,9 +148,9 @@ join hacc.journals on journals.id=accounts.journal_id
             accounts.update(thing)
 
         columns = [
+                ('description', api.cgen.auto()),
                 ('id', api.cgen.pyhacc_account.surrogate()),
                 ('acc_name', api.cgen.pyhacc_account.name(url_key='id', label='Account')),
-                ('description', api.cgen.auto()),
                 ('atype_sort', api.cgen.auto(hidden=True)),
                 ('debit_account', api.cgen.boolean(hidden=True)),
                 ('atype_name', api.cgen.pyhacc_accounttype.name(label='Account Type')),
@@ -157,9 +159,9 @@ join hacc.journals on journals.id=accounts.journal_id
         for index, dates in enumerate(date_ranges):
             d1, d2 = dates
             columns += [
-                    ('debit_{}'.format(index+1), api.cgen.currency_usd(label='{}\nDebit'.format(d2), hidden=True)),
-                    ('credit_{}'.format(index+1), api.cgen.currency_usd(label='{}\nCredit'.format(d2), hidden=True)),
-                    ('balance_{}'.format(index+1), api.cgen.currency_usd(label='{}\nBalance'.format(d2)))]
+                    ('debit_{}'.format(index+1), api.cgen.currency_usd(label='Debit\n{}'.format(d2), hidden=True)),
+                    ('credit_{}'.format(index+1), api.cgen.currency_usd(label='Credit\n{}'.format(d2), hidden=True)),
+                    ('balance_{}'.format(index+1), api.cgen.currency_usd(label='Balance\n{}'.format(d2)))]
 
         accrefs = list(accounts.values())
         accrefs.sort(key=lambda x: (x.atype_sort, x.acc_name))

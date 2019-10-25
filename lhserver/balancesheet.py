@@ -33,8 +33,9 @@ with balances as (
     join hacc.accounttypes on accounttypes.id=balances.type_id
     left outer join hacc.accounts ret on ret.id=balances.retearn_id
 )
-select accounts.id, accounts.acc_name, 
+select
     split_part(accounts.description, '\n', 1) as description, 
+    accounts.id, accounts.acc_name, 
     accounttypes.atype_name, 
     accounttypes.sort as atype_sort,
     accounttypes.debit as debit_account, 
@@ -117,9 +118,9 @@ def get_api_gledger_multi_balance_sheet():
     select = """
 with /*BAL_N_CTE*/
 select 
+    /*COALESCE_COL(description)*/ as description,
     /*COALESCE_COL(id)*/ as id,
     /*COALESCE_COL(acc_name)*/ as acc_name,
-    /*COALESCE_COL(description)*/ as description,
     /*COALESCE_COL(atype_name)*/ as atype_name,
     /*COALESCE_COL(atype_sort)*/ as atype_sort,
     /*COALESCE_COL(debit_account)*/ as debit_account,

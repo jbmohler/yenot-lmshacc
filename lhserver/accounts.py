@@ -40,7 +40,7 @@ select accounts.id,
     accounts.description
 from hacc.accounts
 join hacc.accounttypes on accounttypes.id=accounts.type_id
-where acc_name like %(p)s
+where acc_name ilike %(p)s
 order by acc_name"""
 
     params = {
@@ -54,31 +54,51 @@ order by acc_name"""
         results.tables['accounts', True] = api.sql_tab2(conn, select, params, cm)
     return results.json_out()
 
+def get_api_accounts_list_prompts():
+    return api.PromptList(
+            journal=api.cgen.pyhacc_journal.id(label='Journal', widget_kwargs={'all_option': True}),
+            acctype=api.cgen.pyhacc_accounttype.id(label='Account Type', widget_kwargs={'all_option': True}),
+            __order__=['journal', 'acctype'])
+
 @app.get('/api/accounts/list', name='get_api_accounts_list', \
+        report_prompts=get_api_accounts_list_prompts,
         report_title='Account List')
 def get_api_accounts_list():
-    atype = request.query.get('atype', None)
+    acctype = request.query.get('acctype', None)
+    journal = request.query.get('journal', None)
 
     select = """
 select accounts.id, 
-    accounttypes.atype_name as type, 
-    journals.jrn_name as journal,
     accounts.acc_name as account,
+    accounttypes.atype_name as type, 
+    journals.id as jrn_id,
+    journals.jrn_name as journal,
     accounts.description
 from hacc.accounts
 join hacc.accounttypes on accounttypes.id=accounts.type_id
-join hacc.journals on journals.id=accounts.journal_id"""
+join hacc.journals on journals.id=accounts.journal_id
+where /*WHERE*/"""
 
+    wheres = []
     params = {}
-    if atype != None:
-        params['ataid'] = atype
-        select = select + " where accounts.type_id=%(ataid)s"
+    if acctype != None and acctype != '__all__':
+        params['ataid'] = acctype
+        wheres.append("accounts.type_id=%(ataid)s")
+    if journal != None and journal != '__all__':
+        params['jrnid'] = journal
+        wheres.append("accounts.journal_id=%(jrnid)s")
+    if len(wheres) == 0:
+        wheres.append("True")
+
+    select = select.replace("/*WHERE*/", " and ".join(wheres))
 
     results = api.Results(default_title=True)
     with app.dbconn() as conn:
         cm = api.ColumnMap(\
                 id=api.cgen.pyhacc_account.surrogate(),
-                account=api.cgen.pyhacc_account.name(url_key='id', represents=True))
+                account=api.cgen.pyhacc_account.name(url_key='id', represents=True),
+                jrn_id=api.cgen.pyhacc_journal.surrogate(),
+                journal=api.cgen.pyhacc_journal.name(url_key='jrn_id'))
         results.tables['accounts', True] = api.sql_tab2(conn, select, params, cm)
     return results.json_out()
 
