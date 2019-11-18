@@ -22,13 +22,13 @@ order by date_part('year', trandate)::int
 
 def get_api_transactions_list_prompts():
     return api.PromptList(
-            account=api.cgen.pyhacc_account.id(),
-            acctype=api.cgen.pyhacc_accounttype.id(label='Account Type'),
             date1=api.cgen.date(label='Start Date', relevance=('date2', 'end-range', None)),
             date2=api.cgen.date(label='End Date'),
-            memo_frag=api.cgen.basic(optional=True),
-            payee_frag=api.cgen.basic(optional=True),
-            __order__=['account', 'acctype', 'date1', 'date2', 'memo_frag', 'payee_frag'])
+            account=api.cgen.pyhacc_account.id(optional=True),
+            acctype=api.cgen.pyhacc_accounttype.id(label='Account Type', optional=True),
+            payee_frag=api.cgen.basic(label='Payee Search', optional=True),
+            memo_frag=api.cgen.basic(label='Memo Search', optional=True),
+            __order__=['date1', 'date2', 'account', 'acctype', 'payee_frag', 'memo_frag'])
 
 @app.get('/api/transactions/list', name='get_api_transactions_list', \
         report_title='Transactions List', report_prompts=get_api_transactions_list_prompts)
@@ -39,6 +39,11 @@ def get_api_transactions_list():
     payee_frag = request.query.get('payee_frag', None)
     date1 = api.parse_date(request.query.get('date1'))
     date2 = api.parse_date(request.query.get('date2'))
+
+    if date1 == None or date2 == None:
+        raise api.UserError('parameter-validation', 'Enter both begin & end dates.')
+    elif date1 > date2:
+        raise api.UserError('parameter-validation', 'Start date must be before end date.')
 
     select = """
 select 
@@ -64,13 +69,13 @@ order by transactions.trandate, transactions.tranref,
             'd1': date1, 
             'd2': date2}
 
-    if acctype not in ['', None]:
-        wheres.append("accounts.type_id=%(acctype)s")
-        params['acctype'] = acctype
-
     if account != None:
         wheres.append("accounts.id=%(account)s")
         params['account'] = account
+
+    if acctype != None:
+        wheres.append("accounts.type_id=%(acctype)s")
+        params['acctype'] = acctype
 
     if memo_frag not in ['', None]:
         wheres.append("transactions.memo ilike %(mf)s")
