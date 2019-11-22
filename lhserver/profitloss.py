@@ -64,7 +64,8 @@ join hacc.journals on journals.id=accounts.journal_id
         cm = api.ColumnMap(\
                 id=api.cgen.pyhacc_account.surrogate(),
                 acc_name=api.cgen.pyhacc_account.name(label='Account', url_key='id', represents=True),
-                atype_name=api.cgen.pyhacc_accounttype.name(label='Type'),
+                atype_id=api.cgen.pyhacc_accounttype.surrogate(),
+                atype_name=api.cgen.pyhacc_accounttype.name(label='Account Type', url_key='atype_id'),
                 atype_sort=api.cgen.auto(hidden=True),
                 debit_account=api.cgen.auto(hidden=True),
                 jrn_id=api.cgen.pyhacc_journal.surrogate(),
@@ -155,7 +156,8 @@ join hacc.journals on journals.id=accounts.journal_id
                 ('acc_name', api.cgen.pyhacc_account.name(url_key='id', label='Account')),
                 ('atype_sort', api.cgen.auto(hidden=True)),
                 ('debit_account', api.cgen.boolean(hidden=True)),
-                ('atype_name', api.cgen.pyhacc_accounttype.name(label='Account Type')),
+                ('atype_id', api.cgen.pyhacc_accounttype.surrogate()),
+                ('atype_name', api.cgen.pyhacc_accounttype.name(label='Account Type', url_key='atype_id')),
                 ('jrn_id', api.cgen.pyhacc_journal.surrogate()),
                 ('jrn_name', api.cgen.pyhacc_journal.name(url_key='jrn_id', label='Journal'))]
         for index, dates in enumerate(date_ranges):

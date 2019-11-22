@@ -14,7 +14,7 @@ from hacc.accounttypes"""
     with app.dbconn() as conn:
         cm = api.ColumnMap(
                 id=api.cgen.pyhacc_accounttype.surrogate(),
-                atype_name=api.cgen.pyhacc_accounttype.name(label='Type'))
+                atype_name=api.cgen.pyhacc_accounttype.name(label='Type', url_key='id'))
         results.tables['accounttypes', True] = api.sql_tab2(conn, select, column_map=cm)
     return results.json_out()
 

@@ -70,6 +70,7 @@ def get_api_accounts_list():
     select = """
 select accounts.id, 
     accounts.acc_name as account,
+    accounttypes.id as atype_id,
     accounttypes.atype_name as type, 
     journals.id as jrn_id,
     journals.jrn_name as journal,
@@ -97,6 +98,8 @@ where /*WHERE*/"""
         cm = api.ColumnMap(\
                 id=api.cgen.pyhacc_account.surrogate(),
                 account=api.cgen.pyhacc_account.name(url_key='id', represents=True),
+                atype_id=api.cgen.pyhacc_accounttype.surrogate(),
+                type=api.cgen.pyhacc_accounttype.name(url_key='atype_id'),
                 jrn_id=api.cgen.pyhacc_journal.surrogate(),
                 journal=api.cgen.pyhacc_journal.name(url_key='jrn_id'))
         results.tables['accounts', True] = api.sql_tab2(conn, select, params, cm)

@@ -14,7 +14,7 @@ from hacc.journals"""
     with app.dbconn() as conn:
         cm = api.ColumnMap(
                 id=api.cgen.pyhacc_journal.surrogate(),
-                jrn_name=api.cgen.pyhacc_journal.name())
+                jrn_name=api.cgen.pyhacc_journal.name(label='Journal', url_key='id'))
         results.tables['journals', True] = api.sql_tab2(conn, select, column_map=cm)
     return results.json_out()
 
