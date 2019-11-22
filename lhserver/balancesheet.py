@@ -39,6 +39,7 @@ select
     accounttypes.atype_name, 
     accounttypes.sort as atype_sort,
     accounttypes.debit as debit_account, 
+    journals.id as jrn_id,
     journals.jrn_name, 
     balsheet.debit
 from (
@@ -74,7 +75,8 @@ def get_api_gledger_balance_sheet():
                 atype_name=api.cgen.pyhacc_accounttype.name(label='Type'),
                 atype_sort=api.cgen.auto(hidden=True),
                 debit_account=api.cgen.auto(hidden=True),
-                jrn_name=api.cgen.pyhacc_journal.name(label='Journal'),
+                jrn_id=api.cgen.pyhacc_journal.surrogate(),
+                jrn_name=api.cgen.pyhacc_journal.name(label='Journal', url_key='jrn_id'),
                 debit=api.cgen.currency_usd(hidden=True),
                 credit=api.cgen.currency_usd(hidden=True),
                 balance=api.cgen.currency_usd())
@@ -124,6 +126,7 @@ select
     /*COALESCE_COL(atype_name)*/ as atype_name,
     /*COALESCE_COL(atype_sort)*/ as atype_sort,
     /*COALESCE_COL(debit_account)*/ as debit_account,
+    /*COALESCE_COL(jrn_id)*/ as jrn_id,
     /*COALESCE_COL(jrn_name)*/ as jrn_name,
     /*BAL_N_DEBIT*/
 from /*BAL_N_JOINS*/
@@ -180,7 +183,8 @@ order by
                 atype_name=api.cgen.pyhacc_accounttype.name(label='Type'),
                 atype_sort=api.cgen.auto(hidden=True),
                 debit_account=api.cgen.auto(hidden=True),
-                jrn_name=api.cgen.pyhacc_journal.name(label='Journal'),
+                jrn_id=api.cgen.pyhacc_journal.surrogate(),
+                jrn_name=api.cgen.pyhacc_journal.name(label='Journal', url_key='jrn_id'),
                 **colkwargs)
         data = api.sql_tab2(conn, select, params, cm)
 

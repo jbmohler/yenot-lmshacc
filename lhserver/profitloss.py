@@ -46,6 +46,7 @@ select
     accounttypes.sort as atype_sort,
     accounttypes.debit as debit_account, 
     accounttypes.atype_name, 
+    journals.id as jrn_id,
     journals.jrn_name, 
     deltas.debit
 from deltas
@@ -66,7 +67,8 @@ join hacc.journals on journals.id=accounts.journal_id
                 atype_name=api.cgen.pyhacc_accounttype.name(label='Type'),
                 atype_sort=api.cgen.auto(hidden=True),
                 debit_account=api.cgen.auto(hidden=True),
-                jrn_name=api.cgen.pyhacc_journal.name(label='Journal'),
+                jrn_id=api.cgen.pyhacc_journal.surrogate(),
+                jrn_name=api.cgen.pyhacc_journal.name(label='Journal', url_key='jrn_id'),
                 debit=api.cgen.currency_usd(hidden=True),
                 credit=api.cgen.currency_usd(hidden=True),
                 balance=api.cgen.currency_usd())
