@@ -1,5 +1,4 @@
 import datetime
-import re
 import boa
 import rtlib
 from bottle import request
@@ -45,6 +44,7 @@ select
     accounts.id, accounts.acc_name, 
     accounttypes.sort as atype_sort,
     accounttypes.debit as debit_account, 
+    accounttypes.id as atype_id,
     accounttypes.atype_name, 
     journals.id as jrn_id,
     journals.jrn_name, 
@@ -121,6 +121,7 @@ select
     accounts.id, accounts.acc_name, 
     accounttypes.sort as atype_sort,
     accounttypes.debit as debit_account, 
+    accounttypes.id as atype_id,
     accounttypes.atype_name, 
     journals.id as jrn_id,
     journals.jrn_name, 
@@ -134,7 +135,7 @@ join hacc.journals on journals.id=accounts.journal_id
     ed1 = datetime.date(edate.year, edate.month, 1)
     date_ranges = []
     for index in range(intervals):
-        dprior = boa.n_months_earlier(ed1, (index+1)*length)
+        dprior = boa.n_months_earlier(ed1, (index+1)*length-1)
         dcurr = boa.n_months_earlier(ed1, index*length)
         date_ranges.append((dprior, boa.month_end(dcurr)))
 
@@ -179,6 +180,7 @@ join hacc.journals on journals.id=accounts.journal_id
                 row.description = acc.description
                 row.atype_sort = acc.atype_sort
                 row.debit_account = acc.debit_account
+                row.atype_id = acc.atype_id
                 row.atype_name = acc.atype_name
                 row.jrn_id = acc.jrn_id
                 row.jrn_name = acc.jrn_name
@@ -214,6 +216,7 @@ select
     transactions.trandate as date, 
     transactions.tranref as reference, 
     accounttypes.sort as atype_sort,
+    accounttypes.id as atype_id,
     accounttypes.atype_name,
     accounts.id, accounts.acc_name,
     journals.id as jrn_id,
@@ -246,15 +249,16 @@ order by accounttypes.sort, transactions.trandate,
     results.key_labels += 'Date:  {} -- {}'.format(date1, date2)
     with app.dbconn() as conn:
         cm = api.ColumnMap(
-            tid=api.cgen.pyhacc_transaction.surrogate(),
-            atype_sort=api.cgen.auto(hidden=True),
-            atype_name=api.cgen.pyhacc_accounttype.name(label='Account Type'),
-            id=api.cgen.pyhacc_account.surrogate(),
-            acc_name=api.cgen.pyhacc_account.name(url_key='id', label='Account'),
-            jrn_id=api.cgen.pyhacc_journal.surrogate(),
-            jrn_name=api.cgen.pyhacc_journal.name(url_key='jrn_id', label='Journal'),
-            debit=api.cgen.currency_usd(),
-            credit=api.cgen.currency_usd())
+                tid=api.cgen.pyhacc_transaction.surrogate(),
+                atype_sort=api.cgen.auto(hidden=True),
+                atype_id=api.cgen.pyhacc_accounttype.surrogate(),
+                atype_name=api.cgen.pyhacc_accounttype.name(label='Account Type', url_key='atype_id'),
+                id=api.cgen.pyhacc_account.surrogate(),
+                acc_name=api.cgen.pyhacc_account.name(url_key='id', label='Account'),
+                jrn_id=api.cgen.pyhacc_journal.surrogate(),
+                jrn_name=api.cgen.pyhacc_journal.name(url_key='jrn_id', label='Journal'),
+                debit=api.cgen.currency_usd(),
+                credit=api.cgen.currency_usd())
         results.tables['trans', True] = api.sql_tab2(conn, select, params, cm)
 
     results.keys['report-formats'] = ['gl_summarize_by_type']

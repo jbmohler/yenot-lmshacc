@@ -92,6 +92,7 @@ order by transactions.trandate, transactions.tranref,
     with app.dbconn() as conn:
         cm = api.ColumnMap(
             tid=api.cgen.pyhacc_transaction.surrogate(),
+            payee=api.cgen.pyhacc_transaction.link(url_key='tid'),
             id=api.cgen.pyhacc_account.surrogate(),
             acc_name=api.cgen.pyhacc_account.name(url_key='id', label='Account', hidden=(account!=None)),
             debit=api.cgen.currency_usd(),
@@ -169,7 +170,6 @@ def put_api_transaction(t_id):
         row.tid = t_id
     for row in splits.rows:
         row.stid = t_id
-        row.sid = None
 
     with app.dbconn() as conn:
         with api.writeblock(conn) as w:
