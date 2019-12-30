@@ -20,7 +20,7 @@ order by date_part('year', trandate)::int
         results.tables['years', True] = api.sql_tab2(conn, select, None, None)
     return results.json_out()
 
-def get_api_transactions_list_prompts():
+def get_api_transactions_tran_detail_prompts():
     return api.PromptList(
             date1=api.cgen.date(label='Start Date', relevance=('date2', 'end-range', None)),
             date2=api.cgen.date(label='End Date'),
@@ -30,9 +30,9 @@ def get_api_transactions_list_prompts():
             memo_frag=api.cgen.basic(label='Memo Search', optional=True),
             __order__=['date1', 'date2', 'account', 'acctype', 'payee_frag', 'memo_frag'])
 
-@app.get('/api/transactions/list', name='get_api_transactions_list', \
-        report_title='Transactions List', report_prompts=get_api_transactions_list_prompts)
-def get_api_transactions_list():
+@app.get('/api/transactions/tran-detail', name='get_api_transactions_tran_detail', \
+        report_title='Transaction Detail', report_prompts=get_api_transactions_tran_detail_prompts)
+def get_api_transactions_tran_detail():
     account = request.query.get('account')
     acctype = request.query.get('acctype')
     memo_frag = request.query.get('memo_frag', None)
@@ -91,8 +91,7 @@ order by transactions.trandate, transactions.tranref,
     results.key_labels += 'Date:  {} -- {}'.format(date1, date2)
     with app.dbconn() as conn:
         cm = api.ColumnMap(
-            tid=api.cgen.pyhacc_transaction.surrogate(),
-            payee=api.cgen.pyhacc_transaction.link(url_key='tid'),
+            tid=api.cgen.pyhacc_transaction.surrogate(row_url_label='Transaction'),
             id=api.cgen.pyhacc_account.surrogate(),
             acc_name=api.cgen.pyhacc_account.name(url_key='id', label='Account', hidden=(account!=None)),
             debit=api.cgen.currency_usd(),
@@ -143,8 +142,8 @@ where /*WHERE*/"""
         results.tables['trans'] = columns, rows
 
         cm = api.ColumnMap(
-                sid=api.cgen.pyhacc_transaction.surrogate(),
-                stid=api.cgen.pyhacc_transaction.surrogate(),
+                sid=api.cgen.pyhacc_transplit.surrogate(primary_key=True),
+                stid=api.cgen.pyhacc_transaction.surrogate(row_url_label='Transaction'),
                 account_id=api.cgen.pyhacc_account.surrogate(),
                 sum=api.cgen.currency_usd())
         results.tables['splits'] = api.sql_tab2(conn, selectdet, params, cm)

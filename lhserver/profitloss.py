@@ -249,7 +249,7 @@ order by accounttypes.sort, transactions.trandate,
     results.key_labels += 'Date:  {} -- {}'.format(date1, date2)
     with app.dbconn() as conn:
         cm = api.ColumnMap(
-                tid=api.cgen.pyhacc_transaction.surrogate(),
+                tid=api.cgen.pyhacc_transaction.surrogate(row_url_label='Transaction'),
                 atype_sort=api.cgen.auto(hidden=True),
                 atype_id=api.cgen.pyhacc_accounttype.surrogate(),
                 atype_name=api.cgen.pyhacc_accounttype.name(label='Account Type', url_key='atype_id'),

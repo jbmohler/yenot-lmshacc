@@ -58,6 +58,8 @@ create table hacc.splits (
   sum numeric(10,2)
 );
 
+create index stid_idx on hacc.splits(stid);
+
 create table hacc.tagsplits (
   tag_id uuid not null references hacc.tags(id),
   split_id uuid not null references hacc.splits(sid)
