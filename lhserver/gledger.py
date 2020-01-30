@@ -120,9 +120,9 @@ def get_api_transactions_list():
         raise api.UserError('parameter-validation', 'Start date must be before end date.')
 
     select = """
-select 
-    transactions.tid, transactions.trandate, 
-    transactions.tranref as reference, 
+select
+    transactions.tid, transactions.trandate,
+    transactions.tranref as reference,
     transactions.payee, transactions.memo,
     details.accounts
 from hacc.transactions
@@ -139,7 +139,8 @@ join lateral (
     select array_agg(acc_name) as accounts
     from raw
     ) details on true
-/*WHERE*/ 
+/*WHERE*/
+order by trandate desc
 """
 
     params = {}
@@ -147,7 +148,7 @@ join lateral (
 
     if date1 != None:
         params.update({
-            'd1': date1, 
+            'd1': date1,
             'd2': date2})
         wheres.append("trandate between %(d1)s and %(d2)s")
 
