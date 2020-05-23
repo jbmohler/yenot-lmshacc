@@ -99,6 +99,73 @@ def get_api_gledger_balance_sheet():
     results.keys['report-formats'] = ['gl_summarize_by_type']
     return results.json_out()
 
+def get_api_gledger_current_balance_accounts_prompts():
+    return api.PromptList(\
+            date=api.cgen.date(default=datetime.date.today()),
+            __order__=['date'])
+
+@app.get('/api/gledger/current-balance-accounts', name='api_gledger_current_balance_accounts', \
+        report_title='Current Balance Accounts', report_prompts=get_api_gledger_current_balance_accounts_prompts)
+def get_api_gledger_current_balance_accounts():
+    date = api.parse_date(request.query.get('date'))
+
+    select = """
+with balance as (
+    /*BALANCE_SHEET_AT_D*/
+), recent as (
+    select distinct accounts.id
+    from hacc.accounts
+    join hacc.splits on splits.account_id=accounts.id
+    join hacc.transactions on transactions.tid=splits.stid
+    where transactions.trandate between %(d)s-interval '30 days' and %(d)s+interval '30 days'
+)
+select
+    accounts.id, accounts.acc_name,
+    journals.id as jrn_id, journals.jrn_name as journal,
+    accounttypes.id as atype_id, accounttypes.atype_name as type, accounttypes.debit as debit_account,
+    balance.debit
+from hacc.accounts
+left outer join hacc.journals on journals.id=accounts.journal_id
+left outer join hacc.accounttypes on accounttypes.id=accounts.type_id
+left outer join balance on balance.id=accounts.id
+where accounts.id in ((select id from balance)union(select id from recent)) and accounttypes.balance_sheet
+"""
+
+    select = select.replace("/*BALANCE_SHEET_AT_D*/", BALANCE_SHEET_AT_D)
+
+    results = api.Results(default_title=True)
+    results.key_labels += 'Date:  {}'.format(date)
+    with app.dbconn() as conn:
+        cm = api.ColumnMap(\
+                id=api.cgen.pyhacc_account.surrogate(),
+                acc_name=api.cgen.pyhacc_account.name(label='Account', url_key='id', represents=True),
+                atype_id=api.cgen.pyhacc_accounttype.surrogate(),
+                atype_name=api.cgen.pyhacc_accounttype.name(label='Account Type', url_key='atype_id'),
+                atype_sort=api.cgen.auto(hidden=True),
+                debit_account=api.cgen.auto(hidden=True),
+                jrn_id=api.cgen.pyhacc_journal.surrogate(),
+                jrn_name=api.cgen.pyhacc_journal.name(label='Journal', url_key='jrn_id'),
+                debit=api.cgen.currency_usd(hidden=True),
+                credit=api.cgen.currency_usd(hidden=True),
+                balance=api.cgen.currency_usd())
+        params = {\
+                'd': date}
+        data = api.sql_tab2(conn, select, params, cm)
+
+        columns = api.tab2_columns_transform(data[0], insert=[('debit', 'credit', 'balance')], column_map=cm)
+        def transform_dc(oldrow, row):
+            d, c, b = dcb_values(row.debit_account, row.debit)
+            row.balance = b
+            row.debit = d
+            row.credit = c
+        rows = api.tab2_rows_transform(data, columns, transform_dc)
+
+        results.tables['balances', True] = columns, rows
+
+    results.keys['report-formats'] = ['gl_summarize_by_type']
+    results.keys['client-row-relateds'] = [("Reconcile", "pyhacc://reconcile", {}, {"account_id": "id"})]
+    return results.json_out()
+
 def get_api_gledger_multi_balance_sheet_prompts():
     d = datetime.date.today()
     d1 = boa.the_first(d) - datetime.timedelta(days=1)
