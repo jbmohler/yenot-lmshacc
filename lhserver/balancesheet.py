@@ -163,7 +163,8 @@ where accounts.id in ((select id from balance)union(select id from recent)) and 
         results.tables['balances', True] = columns, rows
 
     results.keys['report-formats'] = ['gl_summarize_by_type']
-    results.keys['client-row-relateds'] = [("Reconcile", "pyhacc://reconcile", {}, {"account_id": "id"})]
+    # ultimately, this calls back to api/transactions/reconcile
+    results.keys['client-row-relateds'] = [("Reconcile", "pyhacc:reconcile", {}, {"account": "id"})]
     return results.json_out()
 
 def get_api_gledger_multi_balance_sheet_prompts():
