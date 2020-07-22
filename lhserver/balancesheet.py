@@ -121,8 +121,10 @@ with balance as (
 )
 select
     accounts.id, accounts.acc_name,
-    journals.id as jrn_id, journals.jrn_name as journal,
-    accounttypes.id as atype_id, accounttypes.atype_name as type, accounttypes.debit as debit_account,
+    journals.id as jrn_id, journals.jrn_name,
+    accounttypes.id as atype_id, accounttypes.atype_name, 
+    accounttypes.sort as atype_sort,
+    accounttypes.debit as debit_account,
     balance.debit
 from hacc.accounts
 left outer join hacc.journals on journals.id=accounts.journal_id

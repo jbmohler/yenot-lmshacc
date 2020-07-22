@@ -146,15 +146,19 @@ order by trandate desc
     params = {}
     wheres = []
 
+    results = api.Results(default_title=True)
+
     if date1 != None:
         params.update({
             'd1': date1,
             'd2': date2})
         wheres.append("trandate between %(d1)s and %(d2)s")
+        results.key_labels += "Between {} and {}".format(date1, date2)
 
-    if fragment != None:
+    if fragment not in ['', None]:
         params['frag'] = api.sanitize_fragment(fragment)
         wheres.append("(transactions.payee ilike %(frag)s or transactions.memo ilike %(frag)s)")
+        results.key_labels += 'Containing "{}"'.format(fragment)
 
     if len(wheres) > 0:
         whstr = "where " + " and ".join(wheres)
@@ -162,10 +166,9 @@ order by trandate desc
         whstr = ""
     select = select.replace("/*WHERE*/", whstr)
 
-    results = api.Results(default_title=True)
     with app.dbconn() as conn:
         cm = api.ColumnMap(\
-                tid=api.cgen.pyhacc_transaction.surrogate(row_url_label='Transaction'),
+                tid=api.cgen.pyhacc_transaction.surrogate(row_url_label='Transaction', represents=True),
                 trandate=api.cgen.auto(label='Date'),
                 accounts=api.cgen.stringlist())
         results.tables['trans', True] = api.sql_tab2(conn, select, params, cm)

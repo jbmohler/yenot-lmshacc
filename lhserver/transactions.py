@@ -26,19 +26,17 @@ def get_api_transactions_tran_detail_prompts():
             date2=api.cgen.date(label='End Date'),
             account=api.cgen.pyhacc_account.id(optional=True),
             acctype=api.cgen.pyhacc_accounttype.id(label='Account Type', optional=True),
-            payee_frag=api.cgen.basic(label='Payee Search', optional=True),
-            memo_frag=api.cgen.basic(label='Memo Search', optional=True),
-            __order__=['date1', 'date2', 'account', 'acctype', 'payee_frag', 'memo_frag'])
+            fragment=api.cgen.basic(optional=True),
+            __order__=['date1', 'date2', 'account', 'acctype', 'fragment'])
 
 @app.get('/api/transactions/tran-detail', name='get_api_transactions_tran_detail', \
         report_title='Transaction Detail', report_prompts=get_api_transactions_tran_detail_prompts)
 def get_api_transactions_tran_detail():
-    account = request.query.get('account')
-    acctype = request.query.get('acctype')
-    memo_frag = request.query.get('memo_frag', None)
-    payee_frag = request.query.get('payee_frag', None)
     date1 = api.parse_date(request.query.get('date1'))
     date2 = api.parse_date(request.query.get('date2'))
+    account = request.query.get('account')
+    acctype = request.query.get('acctype')
+    fragment = request.query.get('fragment', None)
 
     if date1 == None or date2 == None:
         raise api.UserError('parameter-validation', 'Enter both begin & end dates.')
@@ -58,16 +56,19 @@ select
 from hacc.transactions
 join hacc.splits on splits.stid=transactions.tid
 join hacc.accounts on splits.account_id=accounts.id
+join hacc.accounttypes on accounttypes.id=accounts.type_id
 where /*WHERE*/
 order by transactions.trandate, transactions.tranref, 
-    transactions.payee, transactions.memo, accounts.acc_name
+    transactions.payee, transactions.memo, accounttypes.sort, accounts.acc_name
 """
 
+    results = api.Results(default_title=True)
     wheres = [
             "transactions.trandate between %(d1)s and %(d2)s"]
     params = {
             'd1': date1, 
             'd2': date2}
+    results.key_labels += "Between {} and {}".format(date1, date2)
 
     if account != None:
         wheres.append("accounts.id=%(account)s")
@@ -77,25 +78,20 @@ order by transactions.trandate, transactions.tranref,
         wheres.append("accounts.type_id=%(acctype)s")
         params['acctype'] = acctype
 
-    if memo_frag not in ['', None]:
-        wheres.append("transactions.memo ilike %(mf)s")
-        params['mf'] = api.sanitize_fragment(memo_frag)
-
-    if payee_frag not in ['', None]:
-        wheres.append("transactions.payee ilike %(pf)s")
-        params['pf'] = api.sanitize_fragment(payee_frag)
+    if fragment not in ['', None]:
+        params['frag'] = api.sanitize_fragment(fragment)
+        wheres.append("(transactions.payee ilike %(frag)s or transactions.memo ilike %(frag)s)")
+        results.key_labels += 'Containing "{}"'.format(fragment)
 
     select = select.replace("/*WHERE*/", " and ".join(wheres))
 
-    results = api.Results(default_title=True)
-    results.key_labels += 'Date:  {} -- {}'.format(date1, date2)
     with app.dbconn() as conn:
         cm = api.ColumnMap(
             tid=api.cgen.pyhacc_transaction.surrogate(row_url_label='Transaction'),
             id=api.cgen.pyhacc_account.surrogate(),
             acc_name=api.cgen.pyhacc_account.name(url_key='id', label='Account', hidden=(account!=None)),
-            debit=api.cgen.currency_usd(),
-            credit=api.cgen.currency_usd())
+            debit=api.cgen.currency_usd(widget_kwargs={'blankzero': True}),
+            credit=api.cgen.currency_usd(widget_kwargs={'blankzero': True}))
         results.tables['trans', True] = api.sql_tab2(conn, select, params, cm)
         if account != None:
             accname = api.sql_1row(conn, "select acc_name from hacc.accounts where id=%(s)s", {'s': account})
