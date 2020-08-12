@@ -246,7 +246,7 @@ order by accounttypes.sort, transactions.trandate,
     select = select.replace("/*WHERE*/", " and ".join(wheres))
 
     results = api.Results(default_title=True)
-    results.key_labels += 'Date:  {} -- {}'.format(date1, date2)
+    results.key_labels += 'Period between: {} -- {}'.format(date1, date2)
     with app.dbconn() as conn:
         cm = api.ColumnMap(
                 tid=api.cgen.pyhacc_transaction.surrogate(row_url_label='Transaction'),
@@ -257,8 +257,8 @@ order by accounttypes.sort, transactions.trandate,
                 acc_name=api.cgen.pyhacc_account.name(url_key='id', label='Account'),
                 jrn_id=api.cgen.pyhacc_journal.surrogate(),
                 jrn_name=api.cgen.pyhacc_journal.name(url_key='jrn_id', label='Journal'),
-                debit=api.cgen.currency_usd(),
-                credit=api.cgen.currency_usd())
+                debit=api.cgen.currency_usd(widget_kwargs={'blankzero': True}),
+                credit=api.cgen.currency_usd(widget_kwargs={'blankzero': True}))
         results.tables['trans', True] = api.sql_tab2(conn, select, params, cm)
 
     results.keys['report-formats'] = ['gl_summarize_by_type']

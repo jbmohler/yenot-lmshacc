@@ -99,7 +99,7 @@ order by transactions.trandate, transactions.tranref,
     results.keys['report-formats'] = ['gl_summarize_total']
     return results.json_out()
 
-def _get_api_transaction(tid=None, newrow=False):
+def _get_api_transaction(tid=None, newrow=False, copy=False):
     select = """
 select *
 from hacc.transactions
@@ -135,6 +135,12 @@ where /*WHERE*/"""
                 row.tid = str(uuid.uuid1())
                 row.trandate = datetime.date.today()
             rows = api.tab2_rows_default(columns, [None], tran_default)
+        elif copy:
+            def tran_clear(oldrow, row):
+                row.tid = str(uuid.uuid1())
+                row.trandate = datetime.date.today()
+                row.receipt = None
+            rows = api.tab2_rows_transform((columns, rows), columns, tran_clear)
         results.tables['trans'] = columns, rows
 
         cm = api.ColumnMap(
@@ -142,7 +148,14 @@ where /*WHERE*/"""
                 stid=api.cgen.pyhacc_transaction.surrogate(row_url_label='Transaction'),
                 account_id=api.cgen.pyhacc_account.surrogate(),
                 sum=api.cgen.currency_usd())
-        results.tables['splits'] = api.sql_tab2(conn, selectdet, params, cm)
+        columns, rows = api.sql_tab2(conn, selectdet, params, cm)
+        if copy:
+            parent = results.tables['trans'][1][0]
+            def split_reconnect(oldrow, row):
+                row.sid = str(uuid.uuid1())
+                row.stid = parent.tid
+            rows = api.tab2_rows_transform((columns, rows), columns, split_reconnect)
+        results.tables['splits'] = columns, rows
     return results
 
 @app.get('/api/transaction/new', name='get_api_transaction_new')
@@ -154,6 +167,11 @@ def get_api_transaction_new():
 @app.get('/api/transaction/<t_id>', name='get_api_transaction')
 def get_api_transaction(t_id):
     results = _get_api_transaction(tid=t_id)
+    return results.json_out()
+
+@app.get('/api/transaction/<t_id>/copy', name='get_api_transaction_copy')
+def get_api_transaction_copy(t_id):
+    results = _get_api_transaction(tid=t_id, copy=True)
     return results.json_out()
 
 @app.put('/api/transaction/<t_id>', name='put_api_transaction')
@@ -170,5 +188,13 @@ def put_api_transaction(t_id):
         with api.writeblock(conn) as w:
             w.upsert_rows('hacc.transactions', trans)
             w.upsert_rows('hacc.splits', splits)
+        conn.commit()
+    return api.Results().json_out()
+
+@app.delete('/api/transaction/<t_id>', name='delete_api_transaction')
+def delete_api_transaction(t_id):
+    with app.dbconn() as conn:
+        api.sql_void(conn, "delete from hacc.splits where stid=%(tid)s", {'tid': t_id})
+        api.sql_void(conn, "delete from hacc.transactions where tid=%(tid)s", {'tid': t_id})
         conn.commit()
     return api.Results().json_out()
