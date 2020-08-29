@@ -107,8 +107,12 @@ where /*WHERE*/"""
 
 def _get_api_account(a_id=None, newrow=False):
     select = """
-select *
+select accounts.*,
+    journals.jrn_name,
+    accounttypes.atype_name
 from hacc.accounts
+left outer join hacc.journals on journals.id=accounts.journal_id
+left outer join hacc.accounttypes on accounttypes.id=accounts.type_id
 where /*WHERE*/"""
 
     wheres = []
