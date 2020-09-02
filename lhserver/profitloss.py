@@ -40,7 +40,7 @@ with deltas as (
     having sum(splits.sum)<>0
 )
 select
-    split_part(accounts.description, '\n', 1) as description, 
+    accounts.description,
     accounts.id, accounts.acc_name, 
     accounttypes.sort as atype_sort,
     accounttypes.debit as debit_account, 
@@ -117,7 +117,7 @@ with deltas as (
     having sum(splits.sum)<>0
 )
 select
-    split_part(accounts.description, '\n', 1) as description, 
+    accounts.description,
     accounts.id, accounts.acc_name, 
     accounttypes.sort as atype_sort,
     accounttypes.debit as debit_account, 

@@ -23,16 +23,17 @@ create table hacc.accounts (
   id uuid primary key default uuid_generate_v1mc(),
   type_id uuid not null references hacc.accounttypes(id),
   journal_id uuid not null references hacc.journals(id),
-  acc_name varchar(20),
-  description text,
+  acc_name varchar(20) check(char_length(acc_name)>2),
+  description varchar(60) check(char_length(acc_label)>2),
+  acc_note text,
+  rec_note text,
   retearn_id uuid,
   instname text,
   instaddr1 text,
   instaddr2 text,
   instcity text,
   inststate text,
-  instzip text,
-  rec_note text
+  instzip text
 );
 
 create table hacc.transactions (

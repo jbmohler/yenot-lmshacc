@@ -34,7 +34,7 @@ with balances as (
     left outer join hacc.accounts ret on ret.id=balances.retearn_id
 )
 select
-    split_part(accounts.description, '\n', 1) as description, 
+    accounts.description,
     accounts.id, accounts.acc_name, 
     accounttypes.id as atype_id, 
     accounttypes.atype_name, 
