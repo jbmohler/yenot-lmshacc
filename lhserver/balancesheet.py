@@ -120,7 +120,8 @@ with balance as (
     where transactions.trandate between %(d)s-interval '30 days' and %(d)s+interval '30 days'
 )
 select
-    accounts.id, accounts.acc_name,
+    accounts.id,
+    accounts.description, accounts.acc_name,
     journals.id as jrn_id, journals.jrn_name,
     accounttypes.id as atype_id, accounttypes.atype_name, 
     accounttypes.sort as atype_sort,

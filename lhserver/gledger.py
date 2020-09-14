@@ -66,7 +66,7 @@ with memo_grouped as (
     order by payee, memo
 )
 select payee, sum(debit) as debit, 
-    array_agg(format('%%s (%%s)', memo, to_char(debit, 'FM9,999.90')) order by debit desc) as items
+    array_agg(format('%%s (%%s)', memo, to_char(debit, 'FM999,999.90')) order by debit desc) as items
 from memo_grouped
 group by payee
 """
