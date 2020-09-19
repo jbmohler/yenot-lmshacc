@@ -1,4 +1,5 @@
 import uuid
+import json
 import datetime
 from bottle import request
 import yenot.backend.api as api
@@ -188,12 +189,18 @@ def put_api_transaction(t_id):
         with api.writeblock(conn) as w:
             w.upsert_rows('hacc.transactions', trans)
             w.upsert_rows('hacc.splits', splits)
+        payload = json.dumps({"date": str(trans.rows[0].trandate)})
+        api.sql_void(conn, "notify transactions, %(payload)s", {"payload": payload})
         conn.commit()
     return api.Results().json_out()
 
 @app.delete('/api/transaction/<t_id>', name='delete_api_transaction')
 def delete_api_transaction(t_id):
     with app.dbconn() as conn:
+        trandate = api.sql_1row(conn, "select trandate from hacc.transactions where tid=%(tid)s", {'tid': t_id})
+        payload = json.dumps({"date": str(trandate)})
+        api.sql_void(conn, "notify transactions, %(payload)s", {"payload": payload})
+
         api.sql_void(conn, "delete from hacc.splits where stid=%(tid)s", {'tid': t_id})
         api.sql_void(conn, "delete from hacc.transactions where tid=%(tid)s", {'tid': t_id})
         conn.commit()
