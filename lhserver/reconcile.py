@@ -21,8 +21,9 @@ def dcb_values(debit, debit_amt):
     b = debit_amt * (1 if debit else -1) if debit_amt != None else None
     return d, c, b
 
-TAG_BANK_PENDING = 'Bank Pending'
-TAG_BANK_RECONCILED = 'Bank Reconciled'
+
+TAG_BANK_PENDING = "Bank Pending"
+TAG_BANK_RECONCILED = "Bank Reconciled"
 
 
 @app.get("/api/transactions/reconcile", name="get_api_transactions_reconcile")
@@ -67,7 +68,11 @@ where accounts.id=%(account)s"""
 
     results = api.Results(default_title=True)
     with app.dbconn() as conn:
-        params = {"account": account, 'bpend': TAG_BANK_PENDING, 'brec': TAG_BANK_RECONCILED}
+        params = {
+            "account": account,
+            "bpend": TAG_BANK_PENDING,
+            "brec": TAG_BANK_RECONCILED,
+        }
 
         cm = api.ColumnMap(summary=api.cgen.currency_usd())
         results.tables["account"] = api.sql_tab2(conn, select_acc, params, cm)
@@ -127,10 +132,26 @@ on conflict (tag_id, split_id) do nothing
 
         x = trans.as_cte(conn, "splitkeys")
 
-        api.sql_void(conn, delete_pending.replace("SPLIT_KEYS", x).replace("/*COLUMN*/", "pending"), {'tagspec': TAG_BANK_PENDING})
-        api.sql_void(conn, insert_pending.replace("SPLIT_KEYS", x).replace("/*COLUMN*/", "pending"), {'tagspec': TAG_BANK_PENDING})
-        api.sql_void(conn, delete_pending.replace("SPLIT_KEYS", x).replace("/*COLUMN*/", "reconciled"), {'tagspec': TAG_BANK_RECONCILED})
-        api.sql_void(conn, insert_pending.replace("SPLIT_KEYS", x).replace("/*COLUMN*/", "reconciled"), {'tagspec': TAG_BANK_RECONCILED})
+        api.sql_void(
+            conn,
+            delete_pending.replace("SPLIT_KEYS", x).replace("/*COLUMN*/", "pending"),
+            {"tagspec": TAG_BANK_PENDING},
+        )
+        api.sql_void(
+            conn,
+            insert_pending.replace("SPLIT_KEYS", x).replace("/*COLUMN*/", "pending"),
+            {"tagspec": TAG_BANK_PENDING},
+        )
+        api.sql_void(
+            conn,
+            delete_pending.replace("SPLIT_KEYS", x).replace("/*COLUMN*/", "reconciled"),
+            {"tagspec": TAG_BANK_RECONCILED},
+        )
+        api.sql_void(
+            conn,
+            insert_pending.replace("SPLIT_KEYS", x).replace("/*COLUMN*/", "reconciled"),
+            {"tagspec": TAG_BANK_RECONCILED},
+        )
 
         conn.commit()
 

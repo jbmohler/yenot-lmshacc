@@ -6,8 +6,12 @@ import yenot.backend.api as api
 
 app = api.get_global_app()
 
-@app.get('/api/transactions/years', name='get_api_transactions_years', \
-        report_title='Transaction Years')
+
+@app.get(
+    "/api/transactions/years",
+    name="get_api_transactions_years",
+    report_title="Transaction Years",
+)
 def get_api_transactions_years():
     select = """
 select date_part('year', trandate)::int as year, count(*)
@@ -18,31 +22,40 @@ order by date_part('year', trandate)::int
 
     results = api.Results(default_title=True)
     with app.dbconn() as conn:
-        results.tables['years', True] = api.sql_tab2(conn, select, None, None)
+        results.tables["years", True] = api.sql_tab2(conn, select, None, None)
     return results.json_out()
+
 
 def get_api_transactions_tran_detail_prompts():
     return api.PromptList(
-            date1=api.cgen.date(label='Start Date', relevance=('date2', 'end-range', None)),
-            date2=api.cgen.date(label='End Date'),
-            account=api.cgen.pyhacc_account.id(optional=True),
-            acctype=api.cgen.pyhacc_accounttype.id(label='Account Type', optional=True),
-            fragment=api.cgen.basic(optional=True),
-            __order__=['date1', 'date2', 'account', 'acctype', 'fragment'])
+        date1=api.cgen.date(label="Start Date", relevance=("date2", "end-range", None)),
+        date2=api.cgen.date(label="End Date"),
+        account=api.cgen.pyhacc_account.id(optional=True),
+        acctype=api.cgen.pyhacc_accounttype.id(label="Account Type", optional=True),
+        fragment=api.cgen.basic(optional=True),
+        __order__=["date1", "date2", "account", "acctype", "fragment"],
+    )
 
-@app.get('/api/transactions/tran-detail', name='get_api_transactions_tran_detail', \
-        report_title='Transaction Detail', report_prompts=get_api_transactions_tran_detail_prompts)
+
+@app.get(
+    "/api/transactions/tran-detail",
+    name="get_api_transactions_tran_detail",
+    report_title="Transaction Detail",
+    report_prompts=get_api_transactions_tran_detail_prompts,
+)
 def get_api_transactions_tran_detail():
-    date1 = api.parse_date(request.query.get('date1'))
-    date2 = api.parse_date(request.query.get('date2'))
-    account = request.query.get('account')
-    acctype = request.query.get('acctype')
-    fragment = request.query.get('fragment', None)
+    date1 = api.parse_date(request.query.get("date1"))
+    date2 = api.parse_date(request.query.get("date2"))
+    account = request.query.get("account")
+    acctype = request.query.get("acctype")
+    fragment = request.query.get("fragment", None)
 
     if date1 == None or date2 == None:
-        raise api.UserError('parameter-validation', 'Enter both begin & end dates.')
+        raise api.UserError("parameter-validation", "Enter both begin & end dates.")
     elif date1 > date2:
-        raise api.UserError('parameter-validation', 'Start date must be before end date.')
+        raise api.UserError(
+            "parameter-validation", "Start date must be before end date."
+        )
 
     select = """
 select 
@@ -64,41 +77,48 @@ order by transactions.trandate, transactions.tranref,
 """
 
     results = api.Results(default_title=True)
-    wheres = [
-            "transactions.trandate between %(d1)s and %(d2)s"]
-    params = {
-            'd1': date1, 
-            'd2': date2}
+    wheres = ["transactions.trandate between %(d1)s and %(d2)s"]
+    params = {"d1": date1, "d2": date2}
     results.key_labels += "Between {} and {}".format(date1, date2)
 
     if account != None:
         wheres.append("accounts.id=%(account)s")
-        params['account'] = account
+        params["account"] = account
 
     if acctype != None:
         wheres.append("accounts.type_id=%(acctype)s")
-        params['acctype'] = acctype
+        params["acctype"] = acctype
 
-    if fragment not in ['', None]:
-        params['frag'] = api.sanitize_fragment(fragment)
-        wheres.append("(transactions.payee ilike %(frag)s or transactions.memo ilike %(frag)s)")
+    if fragment not in ["", None]:
+        params["frag"] = api.sanitize_fragment(fragment)
+        wheres.append(
+            "(transactions.payee ilike %(frag)s or transactions.memo ilike %(frag)s)"
+        )
         results.key_labels += 'Containing "{}"'.format(fragment)
 
     select = select.replace("/*WHERE*/", " and ".join(wheres))
 
     with app.dbconn() as conn:
         cm = api.ColumnMap(
-            tid=api.cgen.pyhacc_transaction.surrogate(row_url_label='Transaction'),
+            tid=api.cgen.pyhacc_transaction.surrogate(row_url_label="Transaction"),
             id=api.cgen.pyhacc_account.surrogate(),
-            acc_name=api.cgen.pyhacc_account.name(url_key='id', label='Account', hidden=(account!=None)),
-            debit=api.cgen.currency_usd(widget_kwargs={'blankzero': True}),
-            credit=api.cgen.currency_usd(widget_kwargs={'blankzero': True}))
-        results.tables['trans', True] = api.sql_tab2(conn, select, params, cm)
+            acc_name=api.cgen.pyhacc_account.name(
+                url_key="id", label="Account", hidden=(account != None)
+            ),
+            debit=api.cgen.currency_usd(widget_kwargs={"blankzero": True}),
+            credit=api.cgen.currency_usd(widget_kwargs={"blankzero": True}),
+        )
+        results.tables["trans", True] = api.sql_tab2(conn, select, params, cm)
         if account != None:
-            accname = api.sql_1row(conn, "select acc_name from hacc.accounts where id=%(s)s", {'s': account})
-            results.key_labels += 'Account:  {}'.format(accname)
-    results.keys['report-formats'] = ['gl_summarize_total']
+            accname = api.sql_1row(
+                conn,
+                "select acc_name from hacc.accounts where id=%(s)s",
+                {"s": account},
+            )
+            results.key_labels += "Account:  {}".format(accname)
+    results.keys["report-formats"] = ["gl_summarize_total"]
     return results.json_out()
+
 
 def _get_api_transaction(tid=None, newrow=False, copy=False):
     select = """
@@ -121,7 +141,7 @@ where /*WHERE*/"""
     wheres = []
     if tid != None:
         wheres.append("transactions.tid=%(t)s")
-        params['t'] = tid
+        params["t"] = tid
     if newrow:
         wheres.append("False")
 
@@ -132,53 +152,66 @@ where /*WHERE*/"""
     with app.dbconn() as conn:
         columns, rows = api.sql_tab2(conn, select, params)
         if newrow:
+
             def tran_default(index, row):
                 row.tid = str(uuid.uuid1())
                 row.trandate = datetime.date.today()
+
             rows = api.tab2_rows_default(columns, [None], tran_default)
         elif copy:
+
             def tran_clear(oldrow, row):
                 row.tid = str(uuid.uuid1())
                 row.trandate = datetime.date.today()
                 row.receipt = None
+
             rows = api.tab2_rows_transform((columns, rows), columns, tran_clear)
-        results.tables['trans'] = columns, rows
+        results.tables["trans"] = columns, rows
 
         cm = api.ColumnMap(
-                sid=api.cgen.pyhacc_transplit.surrogate(primary_key=True),
-                stid=api.cgen.pyhacc_transaction.surrogate(row_url_label='Transaction'),
-                account_id=api.cgen.pyhacc_account.surrogate(),
-                sum=api.cgen.currency_usd())
+            sid=api.cgen.pyhacc_transplit.surrogate(primary_key=True),
+            stid=api.cgen.pyhacc_transaction.surrogate(row_url_label="Transaction"),
+            account_id=api.cgen.pyhacc_account.surrogate(),
+            sum=api.cgen.currency_usd(),
+        )
         columns, rows = api.sql_tab2(conn, selectdet, params, cm)
         if copy:
-            parent = results.tables['trans'][1][0]
+            parent = results.tables["trans"][1][0]
+
             def split_reconnect(oldrow, row):
                 row.sid = str(uuid.uuid1())
                 row.stid = parent.tid
+
             rows = api.tab2_rows_transform((columns, rows), columns, split_reconnect)
-        results.tables['splits'] = columns, rows
+        results.tables["splits"] = columns, rows
     return results
 
-@app.get('/api/transaction/new', name='get_api_transaction_new')
+
+@app.get("/api/transaction/new", name="get_api_transaction_new")
 def get_api_transaction_new():
     results = _get_api_transaction(newrow=True)
-    results.keys['new_row'] = True
+    results.keys["new_row"] = True
     return results.json_out()
 
-@app.get('/api/transaction/<t_id>', name='get_api_transaction')
+
+@app.get("/api/transaction/<t_id>", name="get_api_transaction")
 def get_api_transaction(t_id):
     results = _get_api_transaction(tid=t_id)
     return results.json_out()
 
-@app.get('/api/transaction/<t_id>/copy', name='get_api_transaction_copy')
+
+@app.get("/api/transaction/<t_id>/copy", name="get_api_transaction_copy")
 def get_api_transaction_copy(t_id):
     results = _get_api_transaction(tid=t_id, copy=True)
     return results.json_out()
 
-@app.put('/api/transaction/<t_id>', name='put_api_transaction')
+
+@app.put("/api/transaction/<t_id>", name="put_api_transaction")
 def put_api_transaction(t_id):
-    trans = api.table_from_tab2('trans', amendments=['tid'], allow_extra=True)
-    splits = api.table_from_tab2('splits', amendments=['stid', 'sid'], required=['account_id', 'sum'])
+    trans = api.table_from_tab2("trans", amendments=["tid"], allow_extra=True)
+    splits = api.table_from_tab2(
+        "splits", amendments=["stid", "sid"], required=["account_id", "sum"]
+    )
 
     for row in trans.rows:
         row.tid = t_id
@@ -187,21 +220,28 @@ def put_api_transaction(t_id):
 
     with app.dbconn() as conn:
         with api.writeblock(conn) as w:
-            w.upsert_rows('hacc.transactions', trans)
-            w.upsert_rows('hacc.splits', splits)
+            w.upsert_rows("hacc.transactions", trans)
+            w.upsert_rows("hacc.splits", splits)
         payload = json.dumps({"date": str(trans.rows[0].trandate)})
         api.sql_void(conn, "notify transactions, %(payload)s", {"payload": payload})
         conn.commit()
     return api.Results().json_out()
 
-@app.delete('/api/transaction/<t_id>', name='delete_api_transaction')
+
+@app.delete("/api/transaction/<t_id>", name="delete_api_transaction")
 def delete_api_transaction(t_id):
     with app.dbconn() as conn:
-        trandate = api.sql_1row(conn, "select trandate from hacc.transactions where tid=%(tid)s", {'tid': t_id})
+        trandate = api.sql_1row(
+            conn,
+            "select trandate from hacc.transactions where tid=%(tid)s",
+            {"tid": t_id},
+        )
         payload = json.dumps({"date": str(trandate)})
         api.sql_void(conn, "notify transactions, %(payload)s", {"payload": payload})
 
-        api.sql_void(conn, "delete from hacc.splits where stid=%(tid)s", {'tid': t_id})
-        api.sql_void(conn, "delete from hacc.transactions where tid=%(tid)s", {'tid': t_id})
+        api.sql_void(conn, "delete from hacc.splits where stid=%(tid)s", {"tid": t_id})
+        api.sql_void(
+            conn, "delete from hacc.transactions where tid=%(tid)s", {"tid": t_id}
+        )
         conn.commit()
     return api.Results().json_out()

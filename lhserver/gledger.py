@@ -4,12 +4,17 @@ import yenot.backend.api as api
 
 app = api.get_global_app()
 
-def get_api_gledger_unbalanced_trans_prompts():
-    return api.PromptList(\
-            __order__=[])
 
-@app.get('/api/gledger/unbalanced-trans', name='api_gledger_unbalanced_trans', \
-        report_title='Unbalanced Transactions', report_prompts=get_api_gledger_unbalanced_trans_prompts)
+def get_api_gledger_unbalanced_trans_prompts():
+    return api.PromptList(__order__=[])
+
+
+@app.get(
+    "/api/gledger/unbalanced-trans",
+    name="api_gledger_unbalanced_trans",
+    report_title="Unbalanced Transactions",
+    report_prompts=get_api_gledger_unbalanced_trans_prompts,
+)
 def get_api_gledger_unbalanced_trans():
     select = """
 select 
@@ -25,32 +30,42 @@ having sum(splits.sum)<>0
 
     results = api.Results(default_title=True)
     with app.dbconn() as conn:
-        cm = api.ColumnMap(\
-                tid=api.cgen.pyhacc_transaction.surrogate(row_url_label='Transaction'),
-                jrn_name=api.cgen.pyhacc_journal.name(label='Journal'))
+        cm = api.ColumnMap(
+            tid=api.cgen.pyhacc_transaction.surrogate(row_url_label="Transaction"),
+            jrn_name=api.cgen.pyhacc_journal.name(label="Journal"),
+        )
         params = {}
-        results.tables['balances', True] = api.sql_tab2(conn, select, params, cm)
+        results.tables["balances", True] = api.sql_tab2(conn, select, params, cm)
 
     return results.json_out()
 
+
 def get_api_transactions_account_summary_prompts():
     return api.PromptList(
-            date1=api.cgen.date(label='Start Date', relevance=('date2', 'end-range', None)),
-            date2=api.cgen.date(label='End Date'),
-            account=api.cgen.pyhacc_account.id(),
-            __order__=['date1', 'date2', 'account'])
+        date1=api.cgen.date(label="Start Date", relevance=("date2", "end-range", None)),
+        date2=api.cgen.date(label="End Date"),
+        account=api.cgen.pyhacc_account.id(),
+        __order__=["date1", "date2", "account"],
+    )
 
-@app.get('/api/transactions/account-summary', name='get_api_transactions_account_summary', \
-        report_title='Transactions Account Summary', report_prompts=get_api_transactions_account_summary_prompts)
+
+@app.get(
+    "/api/transactions/account-summary",
+    name="get_api_transactions_account_summary",
+    report_title="Transactions Account Summary",
+    report_prompts=get_api_transactions_account_summary_prompts,
+)
 def get_api_transactions_account_summary():
-    date1 = api.parse_date(request.query.get('date1'))
-    date2 = api.parse_date(request.query.get('date2'))
-    account = request.query.get('account')
+    date1 = api.parse_date(request.query.get("date1"))
+    date2 = api.parse_date(request.query.get("date2"))
+    account = request.query.get("account")
 
     if date1 == None or date2 == None:
-        raise api.UserError('parameter-validation', 'Enter both begin & end dates.')
+        raise api.UserError("parameter-validation", "Enter both begin & end dates.")
     elif date1 > date2:
-        raise api.UserError('parameter-validation', 'Start date must be before end date.')
+        raise api.UserError(
+            "parameter-validation", "Start date must be before end date."
+        )
 
     select = """
 with memo_grouped as (
@@ -71,53 +86,69 @@ from memo_grouped
 group by payee
 """
 
-    wheres = [
-            "transactions.trandate between %(d1)s and %(d2)s"]
-    params = {
-            'd1': date1, 
-            'd2': date2}
+    wheres = ["transactions.trandate between %(d1)s and %(d2)s"]
+    params = {"d1": date1, "d2": date2}
 
     wheres.append("accounts.id=%(account)s")
-    params['account'] = account
+    params["account"] = account
 
     select = select.replace("/*WHERE*/", " and ".join(wheres))
 
     results = api.Results(default_title=True)
-    results.key_labels += 'Date:  {} -- {}'.format(date1, date2)
+    results.key_labels += "Date:  {} -- {}".format(date1, date2)
     with app.dbconn() as conn:
-        accname, isdebit = api.sql_1row(conn, "select acc_name, (select debit from hacc.accounttypes where id=accounts.type_id) as debit from hacc.accounts where id=%(s)s", {'s': account})
-        results.key_labels += 'Account:  {}'.format(accname)
+        accname, isdebit = api.sql_1row(
+            conn,
+            "select acc_name, (select debit from hacc.accounttypes where id=accounts.type_id) as debit from hacc.accounts where id=%(s)s",
+            {"s": account},
+        )
+        results.key_labels += "Account:  {}".format(accname)
 
         cm = api.ColumnMap(
             debit=api.cgen.currency_usd(),
             credit=api.cgen.currency_usd(),
-            items=api.cgen.stringlist())
-        results.tables['payee', True] = api.sql_tab2(conn, select, params, cm)
+            items=api.cgen.stringlist(),
+        )
+        results.tables["payee", True] = api.sql_tab2(conn, select, params, cm)
 
-    #results.keys['report-formats'] = ['gl_summarize_total']
+    # results.keys['report-formats'] = ['gl_summarize_total']
     return results.json_out()
+
 
 def get_api_transactions_list_prompts():
     return api.PromptList(
-            date1=api.cgen.date(label='Start Date', relevance=('date2', 'end-range', None), optional=True),
-            date2=api.cgen.date(label='End Date', optional=True),
-            fragment=api.cgen.basic(optional=True),
-            __order__=['date1', 'date2', 'fragment'])
+        date1=api.cgen.date(
+            label="Start Date", relevance=("date2", "end-range", None), optional=True
+        ),
+        date2=api.cgen.date(label="End Date", optional=True),
+        fragment=api.cgen.basic(optional=True),
+        __order__=["date1", "date2", "fragment"],
+    )
 
-@app.get('/api/transactions/list', name='get_api_transactions_list', \
-        report_title='Transaction List', report_prompts=get_api_transactions_list_prompts)
+
+@app.get(
+    "/api/transactions/list",
+    name="get_api_transactions_list",
+    report_title="Transaction List",
+    report_prompts=get_api_transactions_list_prompts,
+)
 def get_api_transactions_list():
-    date1 = api.parse_date(request.query.get('date1', None))
-    date2 = api.parse_date(request.query.get('date2', None))
-    fragment = request.query.get('fragment', None)
+    date1 = api.parse_date(request.query.get("date1", None))
+    date2 = api.parse_date(request.query.get("date2", None))
+    fragment = request.query.get("fragment", None)
 
     if date1 == None and date2 == None:
         # both null, no more validation
         pass
     elif date1 == None or date2 == None:
-        raise api.UserError('parameter-validation', 'Enter both begin & end dates (or both must be blank).')
+        raise api.UserError(
+            "parameter-validation",
+            "Enter both begin & end dates (or both must be blank).",
+        )
     elif date1 > date2:
-        raise api.UserError('parameter-validation', 'Start date must be before end date.')
+        raise api.UserError(
+            "parameter-validation", "Start date must be before end date."
+        )
 
     select = """
 select
@@ -149,15 +180,15 @@ order by trandate desc
     results = api.Results(default_title=True)
 
     if date1 != None:
-        params.update({
-            'd1': date1,
-            'd2': date2})
+        params.update({"d1": date1, "d2": date2})
         wheres.append("trandate between %(d1)s and %(d2)s")
         results.key_labels += "Between {} and {}".format(date1, date2)
 
-    if fragment not in ['', None]:
-        params['frag'] = api.sanitize_fragment(fragment)
-        wheres.append("(transactions.payee ilike %(frag)s or transactions.memo ilike %(frag)s)")
+    if fragment not in ["", None]:
+        params["frag"] = api.sanitize_fragment(fragment)
+        wheres.append(
+            "(transactions.payee ilike %(frag)s or transactions.memo ilike %(frag)s)"
+        )
         results.key_labels += 'Containing "{}"'.format(fragment)
 
     if len(wheres) > 0:
@@ -167,10 +198,13 @@ order by trandate desc
     select = select.replace("/*WHERE*/", whstr)
 
     with app.dbconn() as conn:
-        cm = api.ColumnMap(\
-                tid=api.cgen.pyhacc_transaction.surrogate(row_url_label='Transaction', represents=True),
-                trandate=api.cgen.auto(label='Date'),
-                accounts=api.cgen.stringlist())
-        results.tables['trans', True] = api.sql_tab2(conn, select, params, cm)
+        cm = api.ColumnMap(
+            tid=api.cgen.pyhacc_transaction.surrogate(
+                row_url_label="Transaction", represents=True
+            ),
+            trandate=api.cgen.auto(label="Date"),
+            accounts=api.cgen.stringlist(),
+        )
+        results.tables["trans", True] = api.sql_tab2(conn, select, params, cm)
 
     return results.json_out()
