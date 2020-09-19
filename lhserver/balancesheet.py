@@ -255,9 +255,7 @@ order by
     debit_list = []
     joins_list = []
     for index in range(count):
-        params[f"d{index}"] = boa.month_end(
-            datetime.date(year - index, month, 1)
-        )
+        params[f"d{index}"] = boa.month_end(datetime.date(year - index, month, 1))
         s = "bal{0} as (\n\t" + BALANCE_SHEET_AT_D.replace("%(d)s", "%(d{0})s") + "\n)"
         cte_list.append(s.format(index))
         debit_list.append("bal{0}.debit as debit{0}".format(index))
@@ -298,9 +296,7 @@ order by
                 {
                     d: api.cgen.currency_usd(hidden=True),
                     c: api.cgen.currency_usd(hidden=True),
-                    b: api.cgen.currency_usd(
-                        label=f"Balance\n{params[f'd{index}']}"
-                    ),
+                    b: api.cgen.currency_usd(label=f"Balance\n{params[f'd{index}']}"),
                 }
             )
             inserts.append((d, c, b))
@@ -319,7 +315,7 @@ order by
             debit_account=api.cgen.auto(hidden=True),
             jrn_id=api.cgen.pyhacc_journal.surrogate(),
             jrn_name=api.cgen.pyhacc_journal.name(label="Journal", url_key="jrn_id"),
-            **colkwargs
+            **colkwargs,
         )
         data = api.sql_tab2(conn, select, params, cm)
 
