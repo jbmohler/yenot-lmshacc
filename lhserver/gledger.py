@@ -95,14 +95,14 @@ group by payee
     select = select.replace("/*WHERE*/", " and ".join(wheres))
 
     results = api.Results(default_title=True)
-    results.key_labels += "Date:  {} -- {}".format(date1, date2)
+    results.key_labels += f"Date:  {date1} -- {date2}"
     with app.dbconn() as conn:
         accname, isdebit = api.sql_1row(
             conn,
             "select acc_name, (select debit from hacc.accounttypes where id=accounts.type_id) as debit from hacc.accounts where id=%(s)s",
             {"s": account},
         )
-        results.key_labels += "Account:  {}".format(accname)
+        results.key_labels += f"Account:  {accname}"
 
         cm = api.ColumnMap(
             debit=api.cgen.currency_usd(),
@@ -182,14 +182,14 @@ order by trandate desc
     if date1 != None:
         params.update({"d1": date1, "d2": date2})
         wheres.append("trandate between %(d1)s and %(d2)s")
-        results.key_labels += "Between {} and {}".format(date1, date2)
+        results.key_labels += f"Between {date1} and {date2}"
 
     if fragment not in ["", None]:
         params["frag"] = api.sanitize_fragment(fragment)
         wheres.append(
             "(transactions.payee ilike %(frag)s or transactions.memo ilike %(frag)s)"
         )
-        results.key_labels += 'Containing "{}"'.format(fragment)
+        results.key_labels += f'Containing "{fragment}"'
 
     if len(wheres) > 0:
         whstr = "where " + " and ".join(wheres)

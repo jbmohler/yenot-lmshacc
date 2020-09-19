@@ -79,7 +79,7 @@ order by transactions.trandate, transactions.tranref,
     results = api.Results(default_title=True)
     wheres = ["transactions.trandate between %(d1)s and %(d2)s"]
     params = {"d1": date1, "d2": date2}
-    results.key_labels += "Between {} and {}".format(date1, date2)
+    results.key_labels += f"Between {date1} and {date2}"
 
     if account != None:
         wheres.append("accounts.id=%(account)s")
@@ -94,7 +94,7 @@ order by transactions.trandate, transactions.tranref,
         wheres.append(
             "(transactions.payee ilike %(frag)s or transactions.memo ilike %(frag)s)"
         )
-        results.key_labels += 'Containing "{}"'.format(fragment)
+        results.key_labels += f'Containing "{fragment}"'
 
     select = select.replace("/*WHERE*/", " and ".join(wheres))
 
@@ -115,7 +115,7 @@ order by transactions.trandate, transactions.tranref,
                 "select acc_name from hacc.accounts where id=%(s)s",
                 {"s": account},
             )
-            results.key_labels += "Account:  {}".format(accname)
+            results.key_labels += f"Account:  {accname}"
     results.keys["report-formats"] = ["gl_summarize_total"]
     return results.json_out()
 

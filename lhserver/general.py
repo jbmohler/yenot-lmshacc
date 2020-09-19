@@ -19,6 +19,6 @@ def get_static_settings():
     with app.dbconn() as conn:
         for v in search:
             columns, table, sort = settings_map[v]
-            select = "select {} from {} order by {}".format(columns, table, sort)
+            select = f"select {columns} from {table} order by {sort}"
             results.tables[v] = api.sql_tab2(conn, select)
     return results.json_out()

@@ -65,7 +65,7 @@ join hacc.journals on journals.id=accounts.journal_id
 
     params = {"d1": date1, "d2": date2}
     results = api.Results(default_title=True)
-    results.key_labels += "Date:  {} -- {}".format(date1, date2)
+    results.key_labels += f"Date:  {date1} -- {date2}"
     with app.dbconn() as conn:
         cm = api.ColumnMap(
             id=api.cgen.pyhacc_account.surrogate(),
@@ -164,9 +164,7 @@ join hacc.journals on journals.id=accounts.journal_id
         date_ranges.append((dprior, boa.month_end(dcurr)))
 
     results = api.Results(default_title=True)
-    results.key_labels += "Date:  {} -- {}".format(
-        date_ranges[0][0], date_ranges[-1][1]
-    )
+    results.key_labels += f"Date:  {date_ranges[0][0]} -- {date_ranges[-1][1]}"
     with app.dbconn() as conn:
         intervals = [
             api.sql_rows(conn, select, {"d1": d1, "d2": d2}) for d1, d2 in date_ranges
@@ -202,16 +200,16 @@ join hacc.journals on journals.id=accounts.journal_id
             d1, d2 = dates
             columns += [
                 (
-                    "debit_{}".format(index + 1),
-                    api.cgen.currency_usd(label="Debit\n{}".format(d2), hidden=True),
+                    f"debit_{index + 1}",
+                    api.cgen.currency_usd(label=f"Debit\n{d2}", hidden=True),
                 ),
                 (
-                    "credit_{}".format(index + 1),
-                    api.cgen.currency_usd(label="Credit\n{}".format(d2), hidden=True),
+                    f"credit_{index + 1}",
+                    api.cgen.currency_usd(label=f"Credit\n{d2}", hidden=True),
                 ),
                 (
-                    "balance_{}".format(index + 1),
-                    api.cgen.currency_usd(label="Balance\n{}".format(d2)),
+                    f"balance_{index + 1}",
+                    api.cgen.currency_usd(label=f"Balance\n{d2}"),
                 ),
             ]
 
@@ -235,9 +233,9 @@ join hacc.journals on journals.id=accounts.journal_id
                     arow = iset.get(acc.id, None)
                     if arow != None:
                         d, c, b = dcb_values(arow.debit_account, arow.debit)
-                        setattr(row, "debit_{}".format(index + 1), d)
-                        setattr(row, "credit_{}".format(index + 1), c)
-                        setattr(row, "balance_{}".format(index + 1), b)
+                        setattr(row, f"debit_{index + 1}", d)
+                        setattr(row, f"credit_{index + 1}", c)
+                        setattr(row, f"balance_{index + 1}", b)
 
         cm = {attr: values for attr, values in columns}
         results.tables["balances", True] = rtable.as_tab2(column_map=cm)
@@ -299,7 +297,7 @@ order by accounttypes.sort, transactions.trandate,
     select = select.replace("/*WHERE*/", " and ".join(wheres))
 
     results = api.Results(default_title=True)
-    results.key_labels += "Period between: {} -- {}".format(date1, date2)
+    results.key_labels += f"Period between: {date1} -- {date2}"
     with app.dbconn() as conn:
         cm = api.ColumnMap(
             tid=api.cgen.pyhacc_transaction.surrogate(row_url_label="Transaction"),

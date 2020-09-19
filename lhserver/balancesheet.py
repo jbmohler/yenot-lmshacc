@@ -76,7 +76,7 @@ def get_api_gledger_balance_sheet():
     select = BALANCE_SHEET_AT_D
 
     results = api.Results(default_title=True)
-    results.key_labels += "Date:  {}".format(date)
+    results.key_labels += f"Date:  {date}"
     with app.dbconn() as conn:
         cm = api.ColumnMap(
             id=api.cgen.pyhacc_account.surrogate(),
@@ -159,7 +159,7 @@ where accounts.id in ((select id from balance)union(select id from recent)) and 
     select = select.replace("/*BALANCE_SHEET_AT_D*/", BALANCE_SHEET_AT_D)
 
     results = api.Results(default_title=True)
-    results.key_labels += "Date:  {}".format(date)
+    results.key_labels += f"Date:  {date}"
     with app.dbconn() as conn:
         cm = api.ColumnMap(
             id=api.cgen.pyhacc_account.surrogate(),
@@ -255,18 +255,18 @@ order by
     debit_list = []
     joins_list = []
     for index in range(count):
-        params["d{}".format(index)] = boa.month_end(
+        params[f"d{index}"] = boa.month_end(
             datetime.date(year - index, month, 1)
         )
         s = "bal{0} as (\n\t" + BALANCE_SHEET_AT_D.replace("%(d)s", "%(d{0})s") + "\n)"
         cte_list.append(s.format(index))
         debit_list.append("bal{0}.debit as debit{0}".format(index))
         if index == 0:
-            joins_list.append("bal{0}".format(index))
+            joins_list.append(f"bal{index}")
         elif index == 1:
             joins_list.append("bal{0} on bal{0}.id=bal0.id".format(index))
         elif index >= 2:
-            prior = ["bal{}.id".format(i2) for i2 in range(index)]
+            prior = [f"bal{i2}.id" for i2 in range(index)]
             joins_list.append(
                 "bal{0} on bal{0}.id=coalesce({1})".format(index, ", ".join(prior))
             )
@@ -278,30 +278,28 @@ order by
     )
 
     def coalfunc(m):
-        cols = ["bal{}.{}".format(index, m.group(1)) for index in range(count)]
-        return "coalesce({})".format(", ".join(cols))
+        cols = [f"bal{index}.{m.group(1)}" for index in range(count)]
+        return f"coalesce({', '.join(cols)})"
 
     select = re.sub(r"/\*COALESCE_COL\(([a-z0-9_]+)\)\*/", coalfunc, select)
 
     results = api.Results(default_title=True)
-    results.key_labels += "Date:  {} and {} annual comparisons".format(
-        params["d0"], count - 1
-    )
+    results.key_labels += f"Date:  {params['d0']} and {count - 1} annual comparisons"
     with app.dbconn() as conn:
         inserts = []
         colkwargs = {}
         for index in range(count):
             d, c, b = (
-                "debit{}".format(index),
-                "credit{}".format(index),
-                "balance{}".format(index),
+                f"debit{index}",
+                f"credit{index}",
+                f"balance{index}",
             )
             colkwargs.update(
                 {
                     d: api.cgen.currency_usd(hidden=True),
                     c: api.cgen.currency_usd(hidden=True),
                     b: api.cgen.currency_usd(
-                        label="Balance\n{}".format(params["d{}".format(index)])
+                        label=f"Balance\n{params[f'd{index}']}"
                     ),
                 }
             )
@@ -330,9 +328,9 @@ order by
         def transform_dc(oldrow, row):
             for index in range(count):
                 d_at, c_at, b_at = (
-                    "debit{}".format(index),
-                    "credit{}".format(index),
-                    "balance{}".format(index),
+                    f"debit{index}",
+                    f"credit{index}",
+                    f"balance{index}",
                 )
 
                 d, c, b = dcb_values(row.debit_account, getattr(row, d_at))

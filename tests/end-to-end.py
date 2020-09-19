@@ -13,7 +13,7 @@ def test_url(dbname):
     if "YENOT_DB_URL" in os.environ:
         return os.environ["YENOT_DB_URL"]
     # Fall back to local unix socket.  This is the url for unix domain socket.
-    return "postgresql:///{}".format(dbname)
+    return f"postgresql:///{dbname}"
 
 
 def init_database(dburl):
