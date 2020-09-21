@@ -113,6 +113,7 @@ def get_api_gledger_balance_sheet():
         results.tables["balances", True] = columns, rows
 
     results.keys["report-formats"] = ["gl_summarize_by_type"]
+    results.keys["report-refresh"] = [{"channel": "transactions"}]
     return results.json_out()
 
 
@@ -200,6 +201,7 @@ where accounts.id in ((select id from balance)union(select id from recent)) and 
     results.keys["client-row-relateds"] = [
         ("Reconcile", "pyhacc:reconcile", {}, {"account": "id"})
     ]
+    results.keys["report-refresh"] = [{"channel": "transactions"}]
     return results.json_out()
 
 
@@ -339,4 +341,5 @@ order by
         results.tables["balances", True] = columns, rows
 
     results.keys["report-formats"] = ["gl_summarize_by_type"]
+    results.keys["report-refresh"] = [{"channel": "transactions"}]
     return results.json_out()
