@@ -85,6 +85,7 @@ select accounts.id,
     accounts.acc_name as account,
     accounttypes.id as atype_id,
     accounttypes.atype_name as type, 
+    accounttypes.sort as atype_sort, 
     journals.id as jrn_id,
     journals.jrn_name as journal,
     accounts.description
@@ -112,7 +113,10 @@ where /*WHERE*/"""
             id=api.cgen.pyhacc_account.surrogate(),
             account=api.cgen.pyhacc_account.name(url_key="id", represents=True),
             atype_id=api.cgen.pyhacc_accounttype.surrogate(),
-            type=api.cgen.pyhacc_accounttype.name(url_key="atype_id"),
+            type=api.cgen.pyhacc_accounttype.name(
+                url_key="atype_id", sort_proxy="atype_sort"
+            ),
+            atype_sort=api.cgen.auto(hidden=True),
             jrn_id=api.cgen.pyhacc_journal.surrogate(),
             journal=api.cgen.pyhacc_journal.name(url_key="jrn_id"),
         )

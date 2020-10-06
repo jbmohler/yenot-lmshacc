@@ -74,7 +74,7 @@ join hacc.journals on journals.id=accounts.journal_id
             ),
             atype_id=api.cgen.pyhacc_accounttype.surrogate(),
             atype_name=api.cgen.pyhacc_accounttype.name(
-                label="Account Type", url_key="atype_id"
+                label="Account Type", url_key="atype_id", sort_proxy="atype_sort"
             ),
             atype_sort=api.cgen.auto(hidden=True),
             debit_account=api.cgen.auto(hidden=True),
@@ -187,7 +187,7 @@ join hacc.journals on journals.id=accounts.journal_id
             (
                 "atype_name",
                 api.cgen.pyhacc_accounttype.name(
-                    label="Account Type", url_key="atype_id"
+                    label="Account Type", url_key="atype_id", sort_proxy="atype_sort"
                 ),
             ),
             ("jrn_id", api.cgen.pyhacc_journal.surrogate()),
@@ -304,7 +304,7 @@ order by accounttypes.sort, transactions.trandate,
             atype_sort=api.cgen.auto(hidden=True),
             atype_id=api.cgen.pyhacc_accounttype.surrogate(),
             atype_name=api.cgen.pyhacc_accounttype.name(
-                label="Account Type", url_key="atype_id"
+                label="Account Type", url_key="atype_id", sort_proxy="atype_sort"
             ),
             id=api.cgen.pyhacc_account.surrogate(),
             acc_name=api.cgen.pyhacc_account.name(url_key="id", label="Account"),

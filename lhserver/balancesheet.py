@@ -85,7 +85,7 @@ def get_api_gledger_balance_sheet():
             ),
             atype_id=api.cgen.pyhacc_accounttype.surrogate(),
             atype_name=api.cgen.pyhacc_accounttype.name(
-                label="Account Type", url_key="atype_id"
+                label="Account Type", url_key="atype_id", sort_proxy="atype_sort"
             ),
             atype_sort=api.cgen.auto(hidden=True),
             debit_account=api.cgen.auto(hidden=True),
@@ -169,7 +169,7 @@ where accounts.id in ((select id from balance)union(select id from recent)) and 
             ),
             atype_id=api.cgen.pyhacc_accounttype.surrogate(),
             atype_name=api.cgen.pyhacc_accounttype.name(
-                label="Account Type", url_key="atype_id"
+                label="Account Type", url_key="atype_id", sort_proxy="atype_sort"
             ),
             atype_sort=api.cgen.auto(hidden=True),
             debit_account=api.cgen.auto(hidden=True),
@@ -311,7 +311,7 @@ order by
             description=api.cgen.auto(),
             atype_id=api.cgen.pyhacc_accounttype.surrogate(),
             atype_name=api.cgen.pyhacc_accounttype.name(
-                label="Account Type", url_key="atype_id"
+                label="Account Type", url_key="atype_id", sort_proxy="atype_sort"
             ),
             atype_sort=api.cgen.auto(hidden=True),
             debit_account=api.cgen.auto(hidden=True),
