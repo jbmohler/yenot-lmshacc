@@ -36,14 +36,14 @@ with balances as (
     left outer join hacc.accounts ret on ret.id=balances.retearn_id
 )
 select
-    accounts.description,
-    accounts.id, accounts.acc_name, 
     accounttypes.id as atype_id, 
     accounttypes.atype_name, 
     accounttypes.sort as atype_sort,
     accounttypes.debit as debit_account, 
     journals.id as jrn_id,
     journals.jrn_name, 
+    accounts.id, accounts.acc_name, 
+    accounts.description,
     balsheet.debit
 from (
     select balsheet.account_id, sum(balsheet.debit) as debit
@@ -143,18 +143,21 @@ with balance as (
     where transactions.trandate between %(d)s-interval '30 days' and %(d)s+interval '30 days'
 )
 select
-    accounts.id,
-    accounts.description, accounts.acc_name,
-    journals.id as jrn_id, journals.jrn_name,
-    accounttypes.id as atype_id, accounttypes.atype_name, 
+    accounttypes.id as atype_id, 
+    accounttypes.atype_name, 
     accounttypes.sort as atype_sort,
     accounttypes.debit as debit_account,
+    journals.id as jrn_id, journals.jrn_name,
+    accounts.id, accounts.acc_name,
+    accounts.description,
     balance.debit
 from hacc.accounts
 left outer join hacc.journals on journals.id=accounts.journal_id
 left outer join hacc.accounttypes on accounttypes.id=accounts.type_id
 left outer join balance on balance.id=accounts.id
-where accounts.id in ((select id from balance)union(select id from recent)) and accounttypes.balance_sheet
+where accounts.id in ((select id from balance)union(select id from recent)) and 
+    accounttypes.balance_sheet
+order by accounttypes.sort, journals.jrn_name
 """
 
     select = select.replace("/*BALANCE_SHEET_AT_D*/", BALANCE_SHEET_AT_D)
@@ -220,7 +223,7 @@ def get_api_gledger_multi_balance_sheet_prompts():
 @app.get(
     "/api/gledger/multi-balance-sheet",
     name="api_gledger_multi_balance_sheet",
-    report_title="Multi Balance Sheet",
+    report_title="Balance Sheet - Comparative",
     report_prompts=get_api_gledger_multi_balance_sheet_prompts,
 )
 def get_api_gledger_multi_balance_sheet():
@@ -236,20 +239,20 @@ def get_api_gledger_multi_balance_sheet():
     select = """
 with /*BAL_N_CTE*/
 select 
-    /*COALESCE_COL(description)*/ as description,
-    /*COALESCE_COL(id)*/ as id,
-    /*COALESCE_COL(acc_name)*/ as acc_name,
     /*COALESCE_COL(atype_id)*/ as atype_id,
     /*COALESCE_COL(atype_name)*/ as atype_name,
     /*COALESCE_COL(atype_sort)*/ as atype_sort,
     /*COALESCE_COL(debit_account)*/ as debit_account,
     /*COALESCE_COL(jrn_id)*/ as jrn_id,
     /*COALESCE_COL(jrn_name)*/ as jrn_name,
+    /*COALESCE_COL(id)*/ as id,
+    /*COALESCE_COL(acc_name)*/ as acc_name,
+    /*COALESCE_COL(description)*/ as description,
     /*BAL_N_DEBIT*/
 from /*BAL_N_JOINS*/
 order by 
-    /*COALESCE_COL(jrn_name)*/,
-    /*COALESCE_COL(acc_name)*/
+    /*COALESCE_COL(atype_sort)*/,
+    /*COALESCE_COL(jrn_name)*/
 """
 
     params = {}

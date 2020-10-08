@@ -48,19 +48,20 @@ with deltas as (
     having sum(splits.sum)<>0
 )
 select
-    accounts.description,
-    accounts.id, accounts.acc_name, 
-    accounttypes.sort as atype_sort,
-    accounttypes.debit as debit_account, 
     accounttypes.id as atype_id,
     accounttypes.atype_name, 
+    accounttypes.sort as atype_sort,
+    accounttypes.debit as debit_account, 
     journals.id as jrn_id,
     journals.jrn_name, 
+    accounts.id, accounts.acc_name, 
+    accounts.description,
     deltas.debit
 from deltas
 join hacc.accounts on accounts.id=deltas.account_id
 join hacc.accounttypes on accounttypes.id=accounts.type_id
 join hacc.journals on journals.id=accounts.journal_id
+order by accounttypes.sort, journals.jrn_name
 """
 
     params = {"d1": date1, "d2": date2}
@@ -120,7 +121,7 @@ def get_api_gledger_interval_p_and_l_prompts():
 @app.get(
     "/api/gledger/interval-p-and-l",
     name="api_gledger_interval_p_and_l",
-    report_title="Interval Profit & Loss",
+    report_title="Profit & Loss - Comparative",
     report_prompts=get_api_gledger_interval_p_and_l_prompts,
 )
 def get_api_gledger_interval_p_and_l():
@@ -141,19 +142,20 @@ with deltas as (
     having sum(splits.sum)<>0
 )
 select
-    accounts.description,
-    accounts.id, accounts.acc_name, 
-    accounttypes.sort as atype_sort,
-    accounttypes.debit as debit_account, 
     accounttypes.id as atype_id,
     accounttypes.atype_name, 
+    accounttypes.sort as atype_sort,
+    accounttypes.debit as debit_account, 
     journals.id as jrn_id,
     journals.jrn_name, 
+    accounts.id, accounts.acc_name, 
+    accounts.description,
     deltas.debit
 from deltas
 join hacc.accounts on accounts.id=deltas.account_id
 join hacc.accounttypes on accounttypes.id=accounts.type_id
 join hacc.journals on journals.id=accounts.journal_id
+order by accounttypes.sort, journals.jrn_name
 """
 
     ed1 = datetime.date(edate.year, edate.month, 1)
@@ -178,11 +180,6 @@ join hacc.journals on journals.id=accounts.journal_id
             accounts.update(thing)
 
         columns = [
-            ("description", api.cgen.auto()),
-            ("id", api.cgen.pyhacc_account.surrogate()),
-            ("acc_name", api.cgen.pyhacc_account.name(url_key="id", label="Account")),
-            ("atype_sort", api.cgen.auto(hidden=True)),
-            ("debit_account", api.cgen.boolean(hidden=True)),
             ("atype_id", api.cgen.pyhacc_accounttype.surrogate()),
             (
                 "atype_name",
@@ -190,11 +187,16 @@ join hacc.journals on journals.id=accounts.journal_id
                     label="Account Type", url_key="atype_id", sort_proxy="atype_sort"
                 ),
             ),
+            ("atype_sort", api.cgen.auto(hidden=True)),
+            ("debit_account", api.cgen.boolean(hidden=True)),
             ("jrn_id", api.cgen.pyhacc_journal.surrogate()),
             (
                 "jrn_name",
                 api.cgen.pyhacc_journal.name(url_key="jrn_id", label="Journal"),
             ),
+            ("id", api.cgen.pyhacc_account.surrogate()),
+            ("acc_name", api.cgen.pyhacc_account.name(url_key="id", label="Account")),
+            ("description", api.cgen.auto()),
         ]
         for index, dates in enumerate(date_ranges):
             d1, d2 = dates
