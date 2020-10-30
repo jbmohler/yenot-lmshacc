@@ -54,7 +54,6 @@ from (
 join hacc.accounts on accounts.id=balsheet.account_id
 join hacc.accounttypes on accounttypes.id=accounts.type_id
 join hacc.journals on journals.id=accounts.journal_id
-order by accounttypes.sort, accounts.acc_name
 """
 
 
@@ -157,7 +156,7 @@ left outer join hacc.accounttypes on accounttypes.id=accounts.type_id
 left outer join balance on balance.id=accounts.id
 where accounts.id in ((select id from balance)union(select id from recent)) and 
     accounttypes.balance_sheet
-order by accounttypes.sort, journals.jrn_name
+order by accounttypes.sort, journals.jrn_name, accounts.acc_name
 """
 
     select = select.replace("/*BALANCE_SHEET_AT_D*/", BALANCE_SHEET_AT_D)
@@ -252,7 +251,8 @@ select
 from /*BAL_N_JOINS*/
 order by 
     /*COALESCE_COL(atype_sort)*/,
-    /*COALESCE_COL(jrn_name)*/
+    /*COALESCE_COL(jrn_name)*/,
+    /*COALESCE_COL(acc_name)*/
 """
 
     params = {}
