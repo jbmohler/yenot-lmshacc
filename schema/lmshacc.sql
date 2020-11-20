@@ -27,6 +27,7 @@ create table hacc.accounts (
   description varchar(60) check(char_length(acc_label)>2),
   acc_note text,
   rec_note text,
+  contact_keywords text,
   retearn_id uuid,
   instname text,
   instaddr1 text,
