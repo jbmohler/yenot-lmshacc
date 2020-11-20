@@ -1,6 +1,7 @@
 import uuid
 from bottle import request
 import yenot.backend.api as api
+from . import shared
 
 app = api.get_global_app()
 
@@ -73,8 +74,9 @@ def get_api_accounts_list_prompts():
 @app.get(
     "/api/accounts/list",
     name="get_api_accounts_list",
-    report_prompts=get_api_accounts_list_prompts,
     report_title="Account List",
+    report_prompts=get_api_accounts_list_prompts,
+    report_sidebars=shared.account_sidebar("id"),
 )
 def get_api_accounts_list():
     acctype = request.query.get("acctype", None)

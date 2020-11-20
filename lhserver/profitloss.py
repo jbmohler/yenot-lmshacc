@@ -3,6 +3,7 @@ import boa
 import rtlib
 from bottle import request
 import yenot.backend.api as api
+from . import shared
 
 app = api.get_global_app()
 
@@ -30,6 +31,7 @@ def api_gledger_profit_and_loss_prompts():
     name="api_gledger_profit_and_loss",
     report_title="Profit & Loss",
     report_prompts=api_gledger_profit_and_loss_prompts,
+    report_sidebars=shared.account_sidebar("id"),
 )
 def api_gledger_profit_and_loss():
     date1 = api.parse_date(request.query.get("date1"))
@@ -123,6 +125,7 @@ def get_api_gledger_interval_p_and_l_prompts():
     name="api_gledger_interval_p_and_l",
     report_title="Profit & Loss - Comparative",
     report_prompts=get_api_gledger_interval_p_and_l_prompts,
+    report_sidebars=shared.account_sidebar("id"),
 )
 def get_api_gledger_interval_p_and_l():
     edate = api.parse_date(request.query.get("ending_date"))

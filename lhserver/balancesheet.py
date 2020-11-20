@@ -4,6 +4,7 @@ import boa
 import rtlib
 from bottle import request
 import yenot.backend.api as api
+from . import shared
 
 app = api.get_global_app()
 
@@ -68,6 +69,7 @@ def get_api_gledger_balance_sheet_prompts():
     name="api_gledger_balance_sheet",
     report_title="Balance Sheet",
     report_prompts=get_api_gledger_balance_sheet_prompts,
+    report_sidebars=shared.account_sidebar("id"),
 )
 def get_api_gledger_balance_sheet():
     date = api.parse_date(request.query.get("date"))
@@ -127,6 +129,7 @@ def get_api_gledger_current_balance_accounts_prompts():
     name="api_gledger_current_balance_accounts",
     report_title="Current Balance Accounts",
     report_prompts=get_api_gledger_current_balance_accounts_prompts,
+    report_sidebars=shared.account_sidebar("id"),
 )
 def get_api_gledger_current_balance_accounts():
     date = api.parse_date(request.query.get("date"))
@@ -224,6 +227,7 @@ def get_api_gledger_multi_balance_sheet_prompts():
     name="api_gledger_multi_balance_sheet",
     report_title="Balance Sheet - Comparative",
     report_prompts=get_api_gledger_multi_balance_sheet_prompts,
+    report_sidebars=shared.account_sidebar("id"),
 )
 def get_api_gledger_multi_balance_sheet():
     year = api.parse_int(request.query.get("year"))
