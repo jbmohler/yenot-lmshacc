@@ -36,6 +36,7 @@ select
     tspend.split_id is not null as pending,
     tsrec.split_id is not null as reconciled,
     splits.sum as debit,
+    transactions.tid,
     transactions.trandate as date,
     transactions.tranref as reference,
     transactions.payee,
@@ -79,6 +80,7 @@ where accounts.id=%(account)s"""
         acnt = results.tables["account"][1][0]
 
         cm = api.ColumnMap(
+            tid=api.cgen.__meta__(),
             sid=api.cgen.__meta__(),
             debit=api.cgen.currency_usd(),
             credit=api.cgen.currency_usd(),
