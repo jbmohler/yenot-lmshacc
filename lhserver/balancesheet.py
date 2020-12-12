@@ -60,7 +60,7 @@ join hacc.journals on journals.id=accounts.journal_id
 
 def get_api_gledger_balance_sheet_prompts():
     return api.PromptList(
-        date=api.cgen.date(default=datetime.date.today()), __order__=["date"]
+        date=api.cgen.date(default=api.get_request_today()), __order__=["date"]
     )
 
 
@@ -120,7 +120,7 @@ def get_api_gledger_balance_sheet():
 
 def get_api_gledger_current_balance_accounts_prompts():
     return api.PromptList(
-        date=api.cgen.date(default=datetime.date.today()), __order__=["date"]
+        date=api.cgen.date(default=api.get_request_today()), __order__=["date"]
     )
 
 
@@ -211,7 +211,7 @@ order by accounttypes.sort, journals.jrn_name, accounts.acc_name
 
 
 def get_api_gledger_multi_balance_sheet_prompts():
-    d = datetime.date.today()
+    d = api.get_request_today()
     d1 = boa.the_first(d) - datetime.timedelta(days=1)
     months = [(datetime.date(2020, i, 1).strftime("%B"), i) for i in range(1, 13)]
     return api.PromptList(

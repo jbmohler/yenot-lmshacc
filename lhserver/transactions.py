@@ -155,14 +155,14 @@ where /*WHERE*/"""
 
             def tran_default(index, row):
                 row.tid = str(uuid.uuid1())
-                row.trandate = datetime.date.today()
+                row.trandate = api.get_request_today()
 
             rows = api.tab2_rows_default(columns, [None], tran_default)
         elif copy:
 
             def tran_clear(oldrow, row):
                 row.tid = str(uuid.uuid1())
-                row.trandate = datetime.date.today()
+                row.trandate = api.get_request_today()
                 row.receipt = None
 
             rows = api.tab2_rows_transform((columns, rows), columns, tran_clear)

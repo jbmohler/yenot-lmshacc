@@ -16,7 +16,7 @@ def dcb_values(debit, debit_amt):
 
 
 def api_gledger_profit_and_loss_prompts():
-    today = datetime.date.today()
+    today = api.get_request_today()
     prior_month_end = today - datetime.timedelta(days=today.day)
     year_begin = datetime.date(prior_month_end.year, 1, 1)
     return api.PromptList(
@@ -108,7 +108,7 @@ order by accounttypes.sort, journals.jrn_name
 
 
 def get_api_gledger_interval_p_and_l_prompts():
-    d = datetime.date.today()
+    d = api.get_request_today()
     d1 = boa.the_first(d)
     return api.PromptList(
         ending_date=api.cgen.date(
