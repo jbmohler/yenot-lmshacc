@@ -1,8 +1,5 @@
 import os
 import sys
-import time
-import concurrent.futures as futures
-import rtlib
 import yenot.client as yclient
 import yenot.tests
 

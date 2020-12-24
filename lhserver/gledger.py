@@ -1,4 +1,3 @@
-import datetime
 from bottle import request
 import yenot.backend.api as api
 

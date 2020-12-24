@@ -1,7 +1,6 @@
 import datetime
 import re
 import boa
-import rtlib
 from bottle import request
 import yenot.backend.api as api
 from . import shared
