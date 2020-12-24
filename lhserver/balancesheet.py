@@ -118,6 +118,82 @@ def get_api_gledger_balance_sheet():
     return results.json_out()
 
 
+def get_api_gledger_balance_sheet_summary_prompts():
+    return api.PromptList(
+        date=api.cgen.date(default=api.get_request_today()), __order__=["date"]
+    )
+
+
+@app.get(
+    "/api/gledger/balance-sheet-summary",
+    name="api_gledger_balance_sheet_summary",
+    report_title="Balance Sheet Summary",
+    report_prompts=get_api_gledger_balance_sheet_summary_prompts,
+)
+def get_api_gledger_balance_sheet_summary():
+    date = api.parse_date(request.query.get("date"))
+
+    select = f"""
+with bsacc as (
+    {BALANCE_SHEET_AT_D}
+)
+select 
+    bsacc.jrn_id,
+    bsacc.jrn_name,
+    bsacc.atype_id,
+    bsacc.atype_name,
+    bsacc.atype_sort,
+    bsacc.debit_account,
+    sum(bsacc.debit) as debit
+from bsacc
+group by 
+    bsacc.jrn_id,
+    bsacc.jrn_name,
+    bsacc.atype_id,
+    bsacc.atype_name,
+    bsacc.atype_sort,
+    bsacc.debit_account
+order by bsacc.jrn_name, bsacc.atype_sort
+"""
+
+    results = api.Results(default_title=True)
+    results.key_labels += f"Date:  {date}"
+    with app.dbconn() as conn:
+        cm = api.ColumnMap(
+            atype_id=api.cgen.pyhacc_accounttype.surrogate(),
+            atype_name=api.cgen.pyhacc_accounttype.name(
+                label="Account Type", url_key="atype_id", sort_proxy="atype_sort"
+            ),
+            atype_sort=api.cgen.auto(hidden=True),
+            debit_account=api.cgen.auto(hidden=True),
+            jrn_id=api.cgen.pyhacc_journal.surrogate(),
+            jrn_name=api.cgen.pyhacc_journal.name(label="Journal", url_key="jrn_id"),
+            debit=api.cgen.currency_usd(),
+            credit=api.cgen.currency_usd(),
+            balance=api.cgen.currency_usd(hidden=True),
+        )
+        params = {"d": date}
+        data = api.sql_tab2(conn, select, params, cm)
+
+        columns = api.tab2_columns_transform(
+            data[0], insert=[("debit", "credit", "balance")], column_map=cm
+        )
+
+        def transform_dc(oldrow, row):
+            d, c, b = dcb_values(row.debit_account, row.debit)
+            row.balance = b
+            row.debit = d
+            row.credit = c
+
+        rows = api.tab2_rows_transform(data, columns, transform_dc)
+
+        results.tables["balances", True] = columns, rows
+
+    results.keys["report-formats"] = ["gl_summarize_by_type"]
+    results.keys["report-refresh"] = [{"channel": "transactions"}]
+    return results.json_out()
+
+
 def get_api_gledger_current_balance_accounts_prompts():
     return api.PromptList(
         date=api.cgen.date(default=api.get_request_today()), __order__=["date"]
