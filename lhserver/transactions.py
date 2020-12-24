@@ -1,4 +1,5 @@
 import uuid
+import datetime
 import json
 from bottle import request
 import yenot.backend.api as api
@@ -149,29 +150,61 @@ where /*WHERE*/"""
 
     results = api.Results()
     with app.dbconn() as conn:
-        columns, rows = api.sql_tab2(conn, select, params)
+        cm = api.ColumnMap(
+            tran_status=api.cgen.auto(skip_write=True),
+            tran_status_color=api.cgen.auto(skip_write=True),
+        )
+        columns, rows = api.sql_tab2(conn, select, params, cm)
+
+        def tran_default(index, row):
+            row.tid = str(uuid.uuid1())
+            row.trandate = api.get_request_today()
+            tran_status(None, row)
+
+        def tran_clear(oldrow, row):
+            row.tid = str(uuid.uuid1())
+            row.trandate = api.get_request_today()
+            row.receipt = None
+            tran_status(oldrow, row)
+
+        def tran_status(oldrow, row):
+            if newrow:
+                row.tran_status_color = "#28b463"
+                row.tran_status = "New Transaction"
+            elif copy:
+                row.tran_status_color = "#28b463"
+                row.tran_status = f"Copied from {oldrow.trandate}"
+            elif row.trandate > api.get_request_today() - datetime.timedelta(days=7):
+                row.tran_status_color = "#e67e22"
+                row.tran_status = "Edit Recent Transaction"
+            else:
+                row.tran_status_color = "#a93226"
+                row.tran_status = "Edit Older Transaction"
+
+        newcols = api.tab2_columns_transform(
+            columns, insert=[("tid", "tran_status_color", "tran_status")], column_map=cm
+        )
+
         if newrow:
-
-            def tran_default(index, row):
-                row.tid = str(uuid.uuid1())
-                row.trandate = api.get_request_today()
-
-            rows = api.tab2_rows_default(columns, [None], tran_default)
+            rows = api.tab2_rows_default(newcols, [None], tran_default)
         elif copy:
+            rows = api.tab2_rows_transform((columns, rows), newcols, tran_clear)
+        else:
+            rows = api.tab2_rows_transform((columns, rows), newcols, tran_status)
 
-            def tran_clear(oldrow, row):
-                row.tid = str(uuid.uuid1())
-                row.trandate = api.get_request_today()
-                row.receipt = None
-
-            rows = api.tab2_rows_transform((columns, rows), columns, tran_clear)
-        results.tables["trans"] = columns, rows
+        results.tables["trans"] = newcols, rows
 
         cm = api.ColumnMap(
             sid=api.cgen.pyhacc_transplit.surrogate(primary_key=True),
-            stid=api.cgen.pyhacc_transaction.surrogate(row_url_label="Transaction"),
-            account_id=api.cgen.pyhacc_account.surrogate(),
+            stid=api.cgen.pyhacc_transaction.surrogate(
+                row_url_label="Transaction", skip_write=True
+            ),
             sum=api.cgen.currency_usd(),
+            account_id=api.cgen.pyhacc_account.surrogate(),
+            acc_name=api.cgen.pyhacc_account.name(
+                skip_write=True, url_key="account_id"
+            ),
+            jrn_name=api.cgen.pyhacc_journal.name(skip_write=True),
         )
         columns, rows = api.sql_tab2(conn, selectdet, params, cm)
         if copy:
