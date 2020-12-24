@@ -13,10 +13,10 @@ app = api.get_global_app()
 )
 def get_api_transactions_years():
     select = """
-select date_part('year', trandate)::int as year, count(*)
+select date_part('year', trandate)::text as year, count(*)
 from hacc.transactions
-group by date_part('year', trandate)::int
-order by date_part('year', trandate)::int
+group by date_part('year', trandate)::text
+order by date_part('year', trandate)::text
 """
 
     results = api.Results(default_title=True)
