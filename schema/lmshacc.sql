@@ -4,7 +4,7 @@ create schema hacc;
 
 create table hacc.accounttypes (
   id uuid primary key default uuid_generate_v1mc(),
-  atype_name varchar(20),
+  atype_name varchar(20) check(char_length(atype_name)>2),
   description text,
   balance_sheet boolean,
   debit boolean,
@@ -14,7 +14,7 @@ create table hacc.accounttypes (
 
 create table hacc.journals (
   id uuid primary key default uuid_generate_v1mc(),
-  jrn_name varchar(20),
+  jrn_name varchar(20) check(char_length(jrn_name)>2),
   description text
 );
 
@@ -24,7 +24,7 @@ create table hacc.accounts (
   type_id uuid not null references hacc.accounttypes(id),
   journal_id uuid not null references hacc.journals(id),
   acc_name varchar(20) check(char_length(acc_name)>2),
-  description varchar(60) check(char_length(acc_label)>2),
+  description varchar(60) check(char_length(description)>2),
   acc_note text,
   rec_note text,
   contact_keywords text,
@@ -49,7 +49,7 @@ create table hacc.transactions (
 
 create table hacc.tags (
   id uuid primary key default uuid_generate_v1mc(),
-  tag_name varchar(20),
+  tag_name varchar(20) check(char_length(tag_name)>2),
   description text
 );
 
