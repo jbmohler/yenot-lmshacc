@@ -78,7 +78,7 @@ def get_api_gledger_balance_sheet():
     results = api.Results(default_title=True)
     results.key_labels += f"Date:  {date}"
     with app.dbconn() as conn:
-        cm = api.ColumnMap(
+        cm = shared.HaccColumnMap(
             id=api.cgen.pyhacc_account.surrogate(),
             acc_name=api.cgen.pyhacc_account.name(
                 label="Account", url_key="id", represents=True
@@ -158,7 +158,7 @@ order by bsacc.jrn_name, bsacc.atype_sort
     results = api.Results(default_title=True)
     results.key_labels += f"Date:  {date}"
     with app.dbconn() as conn:
-        cm = api.ColumnMap(
+        cm = shared.HaccColumnMap(
             atype_id=api.cgen.pyhacc_accounttype.surrogate(),
             atype_name=api.cgen.pyhacc_accounttype.name(
                 label="Account Type", url_key="atype_id", sort_proxy="atype_sort"
@@ -242,7 +242,7 @@ order by accounttypes.sort, journals.jrn_name, accounts.acc_name
     results = api.Results(default_title=True)
     results.key_labels += f"Date:  {date}"
     with app.dbconn() as conn:
-        cm = api.ColumnMap(
+        cm = shared.HaccColumnMap(
             id=api.cgen.pyhacc_account.surrogate(),
             acc_name=api.cgen.pyhacc_account.name(
                 label="Account", url_key="id", represents=True
@@ -385,7 +385,7 @@ order by
             )
             inserts.append((d, c, b))
 
-        cm = api.ColumnMap(
+        cm = shared.HaccColumnMap(
             id=api.cgen.pyhacc_account.surrogate(),
             acc_name=api.cgen.pyhacc_account.name(
                 label="Account", url_key="id", represents=True

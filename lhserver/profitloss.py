@@ -70,7 +70,7 @@ order by accounttypes.sort, journals.jrn_name
     results = api.Results(default_title=True)
     results.key_labels += f"Date:  {date1} -- {date2}"
     with app.dbconn() as conn:
-        cm = api.ColumnMap(
+        cm = shared.HaccColumnMap(
             id=api.cgen.pyhacc_account.surrogate(),
             acc_name=api.cgen.pyhacc_account.name(
                 label="Account", url_key="id", represents=True
@@ -217,6 +217,7 @@ order by accounttypes.sort, journals.jrn_name
                     api.cgen.currency_usd(label=f"Balance\n{d2}"),
                 ),
             ]
+        columns = shared.hacc_columns(columns)
 
         accrefs = list(accounts.values())
         accrefs.sort(key=lambda x: (x.atype_sort, x.acc_name))
@@ -304,7 +305,7 @@ order by accounttypes.sort, transactions.trandate,
     results = api.Results(default_title=True)
     results.key_labels += f"Period between: {date1} -- {date2}"
     with app.dbconn() as conn:
-        cm = api.ColumnMap(
+        cm = shared.HaccColumnMap(
             tid=api.cgen.pyhacc_transaction.surrogate(row_url_label="Transaction"),
             atype_sort=api.cgen.auto(hidden=True),
             atype_id=api.cgen.pyhacc_accounttype.surrogate(),
