@@ -1,9 +1,9 @@
 import datetime
 import re
-import boa
 from bottle import request
 import yenot.backend.api as api
 from . import shared
+from . import bankday
 
 app = api.get_global_app()
 
@@ -287,7 +287,7 @@ order by accounttypes.sort, journals.jrn_name, accounts.acc_name
 
 def get_api_gledger_multi_balance_sheet_prompts():
     d = api.get_request_today()
-    d1 = boa.the_first(d) - datetime.timedelta(days=1)
+    d1 = bankday.the_first(d) - datetime.timedelta(days=1)
     months = [(datetime.date(2020, i, 1).strftime("%B"), i) for i in range(1, 13)]
     return api.PromptList(
         year=api.cgen.basic(default=str(d1.year)),
@@ -339,7 +339,7 @@ order by
     debit_list = []
     joins_list = []
     for index in range(count):
-        params[f"d{index}"] = boa.month_end(datetime.date(year - index, month, 1))
+        params[f"d{index}"] = bankday.month_end(datetime.date(year - index, month, 1))
         s = "bal{0} as (\n\t" + BALANCE_SHEET_AT_D.replace("%(d)s", "%(d{0})s") + "\n)"
         cte_list.append(s.format(index))
         debit_list.append("bal{0}.debit as debit{0}".format(index))
