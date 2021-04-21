@@ -1,9 +1,9 @@
 import datetime
-import boa
 import rtlib
 from bottle import request
 import yenot.backend.api as api
 from . import shared
+from . import bankday
 
 app = api.get_global_app()
 
@@ -109,7 +109,7 @@ order by accounttypes.sort, journals.jrn_name
 
 def get_api_gledger_interval_p_and_l_prompts():
     d = api.get_request_today()
-    d1 = boa.the_first(d)
+    d1 = bankday.the_first(d)
     return api.PromptList(
         ending_date=api.cgen.date(
             label="Ending Date", default=d1 - datetime.timedelta(1)
@@ -164,9 +164,9 @@ order by accounttypes.sort, journals.jrn_name
     ed1 = datetime.date(edate.year, edate.month, 1)
     date_ranges = []
     for index in range(intervals):
-        dprior = boa.n_months_earlier(ed1, (index + 1) * length - 1)
-        dcurr = boa.n_months_earlier(ed1, index * length)
-        date_ranges.append((dprior, boa.month_end(dcurr)))
+        dprior = bankday.n_months_earlier(ed1, (index + 1) * length - 1)
+        dcurr = bankday.n_months_earlier(ed1, index * length)
+        date_ranges.append((dprior, bankday.month_end(dcurr)))
 
     results = api.Results(default_title=True)
     results.key_labels += f"Date:  {date_ranges[0][0]} -- {date_ranges[-1][1]}"
