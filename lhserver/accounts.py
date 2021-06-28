@@ -90,10 +90,13 @@ select accounts.id,
     accounttypes.sort as atype_sort, 
     journals.id as jrn_id,
     journals.jrn_name as journal,
-    accounts.description
+    accounts.description,
+    accounts.retearn_id,
+    retearn.acc_name as retearn_account
 from hacc.accounts
 join hacc.accounttypes on accounttypes.id=accounts.type_id
 join hacc.journals on journals.id=accounts.journal_id
+left outer join hacc.accounts retearn on retearn.id=accounts.retearn_id
 where /*WHERE*/"""
 
     wheres = []
@@ -121,6 +124,10 @@ where /*WHERE*/"""
             atype_sort=api.cgen.auto(hidden=True),
             jrn_id=api.cgen.pyhacc_journal.surrogate(),
             journal=api.cgen.pyhacc_journal.name(url_key="jrn_id"),
+            retearn_id=api.cgen.pyhacc_account.surrogate(),
+            retearn_account=api.cgen.pyhacc_account.name(
+                label="Retained Earnings", url_key="retearn_id"
+            ),
         )
         results.tables["accounts", True] = api.sql_tab2(conn, select, params, cm)
     return results.json_out()
@@ -130,10 +137,12 @@ def _get_api_account(a_id=None, newrow=False):
     select = """
 select accounts.*,
     journals.jrn_name,
-    accounttypes.atype_name
+    accounttypes.atype_name,
+    retearn.acc_name as retearn_account
 from hacc.accounts
 left outer join hacc.journals on journals.id=accounts.journal_id
 left outer join hacc.accounttypes on accounttypes.id=accounts.type_id
+left outer join hacc.accounts retearn on retearn.id=accounts.retearn_id
 where /*WHERE*/"""
 
     wheres = []
@@ -149,7 +158,12 @@ where /*WHERE*/"""
 
     results = api.Results()
     with app.dbconn() as conn:
-        columns, rows = api.sql_tab2(conn, select, params)
+        cm = api.ColumnMap(
+            jrn_name=api.cgen.pyhacc_journal.name(skip_write=True),
+            atype_name=api.cgen.pyhacc_accounttype.name(skip_write=True),
+            retearn_account=api.cgen.pyhacc_account.name(skip_write=True),
+        )
+        columns, rows = api.sql_tab2(conn, select, params, cm)
 
         if newrow:
 

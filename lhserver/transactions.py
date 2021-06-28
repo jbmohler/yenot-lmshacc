@@ -100,7 +100,9 @@ order by transactions.trandate, transactions.tranref,
 
     with app.dbconn() as conn:
         cm = api.ColumnMap(
-            tid=api.cgen.pyhacc_transaction.surrogate(row_url_label="Transaction"),
+            tid=api.cgen.pyhacc_transaction.surrogate(
+                row_url_label="Transaction", represents=True
+            ),
             id=api.cgen.pyhacc_account.surrogate(),
             acc_name=api.cgen.pyhacc_account.name(
                 url_key="id", label="Account", hidden=(account != None)
@@ -202,9 +204,9 @@ where /*WHERE*/"""
             sum=api.cgen.currency_usd(),
             account_id=api.cgen.pyhacc_account.surrogate(),
             acc_name=api.cgen.pyhacc_account.name(
-                skip_write=True, url_key="account_id"
+                label="Account", skip_write=True, url_key="account_id"
             ),
-            jrn_name=api.cgen.pyhacc_journal.name(skip_write=True),
+            jrn_name=api.cgen.pyhacc_journal.name(label="Journal", skip_write=True),
         )
         columns, rows = api.sql_tab2(conn, selectdet, params, cm)
         if copy:
