@@ -205,3 +205,23 @@ def put_account(acnt_id):
         conn.commit()
 
     return api.Results().json_out()
+
+
+@app.delete("/api/account/<acnt_id>", name="delete_api_account")
+def delete_account(acnt_id):
+    with app.dbconn() as conn:
+        params = {"acnt_id": acnt_id}
+        trans = api.sql_1row(
+            conn,
+            "select count(*) from hacc.splits where account_id=%(acnt_id)s",
+            params,
+        )
+        if trans > 0:
+            raise api.UserError(
+                "data-check", "This account is referenced by transactions."
+            )
+
+        api.sql_void(conn, "delete from hacc.accounts where id=%(acnt_id)s", params)
+        conn.commit()
+
+    return api.Results().json_out()
