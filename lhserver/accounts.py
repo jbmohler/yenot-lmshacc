@@ -1,5 +1,4 @@
 import uuid
-from bottle import request
 import yenot.backend.api as api
 from . import shared
 
@@ -7,7 +6,7 @@ app = api.get_global_app()
 
 
 @app.get("/api/accounts/by-reference", name="get_api_accounts_by_reference")
-def get_api_accounts_by_reference():
+def get_api_accounts_by_reference(request):
     reference = request.query.get("reference")
 
     select = """
@@ -34,7 +33,7 @@ where acc_name=%(ref)s"""
 
 
 @app.get("/api/accounts/completions", name="get_api_accounts_completions")
-def get_api_accounts_completions():
+def get_api_accounts_completions(request):
     prefix = request.query.get("prefix")
 
     select = """
@@ -78,7 +77,7 @@ def get_api_accounts_list_prompts():
     report_prompts=get_api_accounts_list_prompts,
     report_sidebars=shared.account_sidebar("id"),
 )
-def get_api_accounts_list():
+def get_api_accounts_list(request):
     acctype = request.query.get("acctype", None)
     journal = request.query.get("journal", None)
 

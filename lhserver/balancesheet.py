@@ -1,6 +1,5 @@
 import datetime
 import re
-from bottle import request
 import yenot.backend.api as api
 from . import shared
 from . import bankday
@@ -70,7 +69,7 @@ def get_api_gledger_balance_sheet_prompts():
     report_prompts=get_api_gledger_balance_sheet_prompts,
     report_sidebars=shared.account_sidebar("id"),
 )
-def get_api_gledger_balance_sheet():
+def get_api_gledger_balance_sheet(request):
     date = api.parse_date(request.query.get("date"))
 
     select = BALANCE_SHEET_AT_D
@@ -129,7 +128,7 @@ def get_api_gledger_balance_sheet_summary_prompts():
     report_title="Balance Sheet Summary",
     report_prompts=get_api_gledger_balance_sheet_summary_prompts,
 )
-def get_api_gledger_balance_sheet_summary():
+def get_api_gledger_balance_sheet_summary(request):
     date = api.parse_date(request.query.get("date"))
 
     select = f"""
@@ -206,7 +205,7 @@ def get_api_gledger_current_balance_accounts_prompts():
     report_prompts=get_api_gledger_current_balance_accounts_prompts,
     report_sidebars=shared.account_sidebar("id"),
 )
-def get_api_gledger_current_balance_accounts():
+def get_api_gledger_current_balance_accounts(request):
     date = api.parse_date(request.query.get("date"))
 
     select = """
@@ -304,7 +303,7 @@ def get_api_gledger_multi_balance_sheet_prompts():
     report_prompts=get_api_gledger_multi_balance_sheet_prompts,
     report_sidebars=shared.account_sidebar("id"),
 )
-def get_api_gledger_multi_balance_sheet():
+def get_api_gledger_multi_balance_sheet(request):
     year = api.parse_int(request.query.get("year"))
     month = api.parse_int(request.query.get("month_end"))
     count = api.parse_int(request.query.get("count", 3))

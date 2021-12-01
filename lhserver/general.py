@@ -1,11 +1,10 @@
-from bottle import request
 import yenot.backend.api as api
 
 app = api.get_global_app()
 
 
 @app.get("/api/static_settings", name="api_static_settings")
-def get_static_settings():
+def get_static_settings(request):
     search = [v for _, v in request.query.items()]
 
     # big nasty global list of every simple combo-boxable list in the entire

@@ -1,4 +1,3 @@
-from bottle import request
 import yenot.backend.api as api
 
 app = api.get_global_app()
@@ -54,7 +53,7 @@ def get_api_transactions_account_summary_prompts():
     report_title="Transactions Account Summary",
     report_prompts=get_api_transactions_account_summary_prompts,
 )
-def get_api_transactions_account_summary():
+def get_api_transactions_account_summary(request):
     date1 = api.parse_date(request.query.get("date1"))
     date2 = api.parse_date(request.query.get("date2"))
     account = request.query.get("account")
@@ -131,7 +130,7 @@ def get_api_transactions_list_prompts():
     report_title="Transaction List",
     report_prompts=get_api_transactions_list_prompts,
 )
-def get_api_transactions_list():
+def get_api_transactions_list(request):
     date1 = api.parse_date(request.query.get("date1", None))
     date2 = api.parse_date(request.query.get("date2", None))
     fragment = request.query.get("fragment", None)

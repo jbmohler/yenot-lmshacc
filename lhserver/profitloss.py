@@ -1,6 +1,5 @@
 import datetime
 import rtlib
-from bottle import request
 import yenot.backend.api as api
 from . import shared
 from . import bankday
@@ -33,7 +32,7 @@ def api_gledger_profit_and_loss_prompts():
     report_prompts=api_gledger_profit_and_loss_prompts,
     report_sidebars=shared.account_sidebar("id"),
 )
-def api_gledger_profit_and_loss():
+def api_gledger_profit_and_loss(request):
     date1 = api.parse_date(request.query.get("date1"))
     date2 = api.parse_date(request.query.get("date2"))
 
@@ -127,7 +126,7 @@ def get_api_gledger_interval_p_and_l_prompts():
     report_prompts=get_api_gledger_interval_p_and_l_prompts,
     report_sidebars=shared.account_sidebar("id"),
 )
-def get_api_gledger_interval_p_and_l():
+def get_api_gledger_interval_p_and_l(request):
     edate = api.parse_date(request.query.get("ending_date"))
     intervals = api.parse_int(request.query.get("intervals"))
     length = api.parse_int(request.query.get("length"))
@@ -264,7 +263,7 @@ def get_api_gledger_detailed_pl_prompts():
     report_title="Detailed Profit & Loss",
     report_prompts=get_api_gledger_detailed_pl_prompts,
 )
-def get_api_gledger_detailed_pl():
+def get_api_gledger_detailed_pl(request):
     date1 = api.parse_date(request.query.get("date1"))
     date2 = api.parse_date(request.query.get("date2"))
 

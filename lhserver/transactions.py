@@ -1,7 +1,6 @@
 import uuid
 import datetime
 import json
-from bottle import request
 import yenot.backend.api as api
 
 app = api.get_global_app()
@@ -43,7 +42,7 @@ def get_api_transactions_tran_detail_prompts():
     report_title="Transaction Detail",
     report_prompts=get_api_transactions_tran_detail_prompts,
 )
-def get_api_transactions_tran_detail():
+def get_api_transactions_tran_detail(request):
     date1 = api.parse_date(request.query.get("date1"))
     date2 = api.parse_date(request.query.get("date2"))
     account = request.query.get("account")

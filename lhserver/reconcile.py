@@ -1,4 +1,3 @@
-from bottle import request
 import yenot.backend.api as api
 
 app = api.get_global_app()
@@ -25,7 +24,7 @@ TAG_BANK_RECONCILED = "Bank Reconciled"
 
 
 @app.get("/api/transactions/reconcile", name="get_api_transactions_reconcile")
-def get_api_transactions_reconcile():
+def get_api_transactions_reconcile(request):
     account = request.query.get("account")
 
     select = """
