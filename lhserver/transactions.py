@@ -131,10 +131,17 @@ where /*WHERE*/"""
 select splits.sid, splits.stid, 
     splits.account_id, accounts.acc_name,
     splits.sum,
-    journals.jrn_name
+    journals.jrn_name,
+    attached.tags
 from hacc.transactions
 join hacc.splits on splits.stid=transactions.tid
 join hacc.accounts on accounts.id=splits.account_id
+join lateral (
+    select array_agg(tags.id) tags
+    from hacc.tagsplits
+    join hacc.tags on tags.id=tagsplits.tag_id
+    where tagsplits.split_id=splits.sid
+    ) attached on true
 left outer join hacc.journals on journals.id=accounts.journal_id
 where /*WHERE*/"""
 
@@ -206,6 +213,7 @@ where /*WHERE*/"""
                 label="Account", skip_write=True, url_key="account_id"
             ),
             jrn_name=api.cgen.pyhacc_journal.name(label="Journal", skip_write=True),
+            tags=api.cgen.matrix(),
         )
         columns, rows = api.sql_tab2(conn, selectdet, params, cm)
         if copy:
@@ -217,6 +225,8 @@ where /*WHERE*/"""
 
             rows = api.tab2_rows_transform((columns, rows), columns, split_reconnect)
         results.tables["splits"] = columns, rows
+
+        results.tables["tags"] = api.sql_tab2(conn, "select * from hacc.tags")
     return results
 
 
@@ -243,7 +253,11 @@ def get_api_transaction_copy(t_id):
 def put_api_transaction(t_id):
     trans = api.table_from_tab2("trans", amendments=["tid"], allow_extra=True)
     splits = api.table_from_tab2(
-        "splits", amendments=["stid", "sid"], required=["account_id", "sum"]
+        "splits",
+        amendments=["stid", "sid"],
+        required=["account_id", "sum"],
+        options=["tags"],
+        matrix=["tags"],
     )
 
     for row in trans.rows:
@@ -254,7 +268,7 @@ def put_api_transaction(t_id):
     with app.dbconn() as conn:
         with api.writeblock(conn) as w:
             w.upsert_rows("hacc.transactions", trans)
-            w.upsert_rows("hacc.splits", splits)
+            w.upsert_rows("hacc.splits", splits, matrix={"tags": "hacc.tagsplits"})
         payload = json.dumps({"date": str(trans.rows[0].trandate)})
         api.sql_void(conn, "notify transactions, %(payload)s", {"payload": payload})
         conn.commit()
