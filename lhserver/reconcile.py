@@ -1,4 +1,5 @@
 import yenot.backend.api as api
+from . import initdb
 
 app = api.get_global_app()
 
@@ -17,10 +18,6 @@ def dcb_values(debit, debit_amt):
         c = 0.0 if not debit else None
     b = debit_amt * (1 if debit else -1) if debit_amt != None else None
     return d, c, b
-
-
-TAG_BANK_PENDING = "Bank Pending"
-TAG_BANK_RECONCILED = "Bank Reconciled"
 
 
 @app.get("/api/transactions/reconcile", name="get_api_transactions_reconcile")
@@ -68,8 +65,8 @@ where accounts.id=%(account)s"""
     with app.dbconn() as conn:
         params = {
             "account": account,
-            "bpend": TAG_BANK_PENDING,
-            "brec": TAG_BANK_RECONCILED,
+            "bpend": initdb.TAG_BANK_PENDING,
+            "brec": initdb.TAG_BANK_RECONCILED,
         }
 
         cm = api.ColumnMap(summary=api.cgen.currency_usd())
@@ -134,22 +131,22 @@ on conflict (tag_id, split_id) do nothing
         api.sql_void(
             conn,
             delete_pending.replace("SPLIT_KEYS", x).replace("/*COLUMN*/", "pending"),
-            {"tagspec": TAG_BANK_PENDING},
+            {"tagspec": initdb.TAG_BANK_PENDING},
         )
         api.sql_void(
             conn,
             insert_pending.replace("SPLIT_KEYS", x).replace("/*COLUMN*/", "pending"),
-            {"tagspec": TAG_BANK_PENDING},
+            {"tagspec": initdb.TAG_BANK_PENDING},
         )
         api.sql_void(
             conn,
             delete_pending.replace("SPLIT_KEYS", x).replace("/*COLUMN*/", "reconciled"),
-            {"tagspec": TAG_BANK_RECONCILED},
+            {"tagspec": initdb.TAG_BANK_RECONCILED},
         )
         api.sql_void(
             conn,
             insert_pending.replace("SPLIT_KEYS", x).replace("/*COLUMN*/", "reconciled"),
-            {"tagspec": TAG_BANK_RECONCILED},
+            {"tagspec": initdb.TAG_BANK_RECONCILED},
         )
 
         conn.commit()

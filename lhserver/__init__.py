@@ -1,3 +1,4 @@
+from . import initdb  # noqa
 from . import general  # noqa
 from . import accounts  # noqa
 from . import accounttypes  # noqa
