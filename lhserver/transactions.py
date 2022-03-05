@@ -222,6 +222,9 @@ where /*WHERE*/"""
             def split_reconnect(oldrow, row):
                 row.sid = str(uuid.uuid1())
                 row.stid = parent.tid
+                # Clear the tags; I like this but it probably is not
+                # unambiguously correct.
+                row.tags = []
 
             rows = api.tab2_rows_transform((columns, rows), columns, split_reconnect)
         results.tables["splits"] = columns, rows
