@@ -121,6 +121,16 @@ order by transactions.trandate, transactions.tranref,
     return results.json_out()
 
 
+@app.put("/api/transactions/poll-changes", name="put_api_transactions_poll_changes")
+def put_api_transactions_poll_changes(request):
+    return api.start_listener(request, "transactions")
+
+
+@app.get("/api/transactions/poll-changes", name="get_api_transactions_poll_changes")
+def get_api_transactions_poll_changes(request):
+    return api.poll_listener(request, request.query.get("channel"))
+
+
 def _get_api_transaction(tid=None, newrow=False, copy=False):
     select = """
 select *
@@ -273,7 +283,7 @@ def put_api_transaction(t_id):
             w.upsert_rows("hacc.transactions", trans)
             w.upsert_rows("hacc.splits", splits, matrix={"tags": "hacc.tagsplits"})
         payload = json.dumps({"date": str(trans.rows[0].trandate)})
-        api.sql_void(conn, "notify transactions, %(payload)s", {"payload": payload})
+        api.notify_listener(conn, "transactions", payload)
         conn.commit()
     return api.Results().json_out()
 
@@ -287,7 +297,7 @@ def delete_api_transaction(t_id):
             {"tid": t_id},
         )
         payload = json.dumps({"date": str(trandate)})
-        api.sql_void(conn, "notify transactions, %(payload)s", {"payload": payload})
+        api.notify_listener(conn, "transactions", payload)
 
         api.sql_void(conn, "delete from hacc.splits where stid=%(tid)s", {"tid": t_id})
         api.sql_void(
