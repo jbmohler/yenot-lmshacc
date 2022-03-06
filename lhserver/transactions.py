@@ -128,7 +128,7 @@ def put_api_transactions_poll_changes(request):
 
 @app.get("/api/transactions/poll-changes", name="get_api_transactions_poll_changes")
 def get_api_transactions_poll_changes(request):
-    return api.poll_listener(request, request.query.get("channel"))
+    return api.poll_listener(request, "transactions")
 
 
 def _get_api_transaction(tid=None, newrow=False, copy=False):
