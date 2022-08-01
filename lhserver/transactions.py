@@ -167,16 +167,12 @@ select splits.sid, splits.stid,
     splits.account_id, accounts.acc_name,
     splits.sum,
     journals.jrn_name,
-    attached.tags
+    (
+        select array_agg(tagsplits.tag_id::text) from hacc.tagsplits where tagsplits.split_id=splits.sid
+    ) as tags
 from hacc.transactions
 join hacc.splits on splits.stid=transactions.tid
 join hacc.accounts on accounts.id=splits.account_id
-join lateral (
-    select array_agg(tags.id::text) tags
-    from hacc.tagsplits
-    join hacc.tags on tags.id=tagsplits.tag_id
-    where tagsplits.split_id=splits.sid
-    ) attached on true
 left outer join hacc.journals on journals.id=accounts.journal_id
 where /*WHERE*/"""
 
