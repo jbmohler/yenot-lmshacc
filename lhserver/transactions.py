@@ -65,11 +65,25 @@ select
     transactions.payee, 
     transactions.memo, 
     case when splits.sum>=0 then splits.sum end as debit,
-    case when splits.sum<0 then -splits.sum end as credit
+    case when splits.sum<0 then -splits.sum end as credit,
+    details.accounts
 from hacc.transactions
 join hacc.splits on splits.stid=transactions.tid
 join hacc.accounts on splits.account_id=accounts.id
 join hacc.accounttypes on accounttypes.id=accounts.type_id
+join lateral (
+    with raw as (
+        select accounts.acc_name
+        from hacc.splits
+        join hacc.accounts on splits.account_id=accounts.id
+        join hacc.accounttypes on accounttypes.id=accounts.type_id
+        where splits.stid=transactions.tid
+        group by accounts.acc_name, accounttypes.sort
+        order by abs(sum(splits.sum)) desc, accounttypes.sort, accounts.acc_name
+    )
+    select array_agg(acc_name) as accounts
+    from raw
+    ) details on true
 where /*WHERE*/
 order by transactions.trandate, transactions.tranref, 
     transactions.payee, transactions.memo, accounttypes.sort, accounts.acc_name
@@ -80,11 +94,11 @@ order by transactions.trandate, transactions.tranref,
     params = {"d1": date1, "d2": date2}
     results.key_labels += f"Between {date1} and {date2}"
 
-    if account != None:
+    if account not in ["", None]:
         wheres.append("accounts.id=%(account)s")
         params["account"] = account
 
-    if acctype != None:
+    if acctype not in ["", None]:
         wheres.append("accounts.type_id=%(acctype)s")
         params["acctype"] = acctype
 
@@ -93,7 +107,6 @@ order by transactions.trandate, transactions.tranref,
         wheres.append(
             "(transactions.payee ilike %(frag)s or transactions.memo ilike %(frag)s)"
         )
-        results.key_labels += f'Containing "{fragment}"'
 
     select = select.replace("/*WHERE*/", " and ".join(wheres))
 
@@ -108,15 +121,27 @@ order by transactions.trandate, transactions.tranref,
             ),
             debit=api.cgen.currency_usd(widget_kwargs={"blankzero": True}),
             credit=api.cgen.currency_usd(widget_kwargs={"blankzero": True}),
+            accounts=api.cgen.stringlist(),
         )
         results.tables["trans", True] = api.sql_tab2(conn, select, params, cm)
-        if account != None:
+
+        if account not in ["", None]:
             accname = api.sql_1row(
                 conn,
                 "select acc_name from hacc.accounts where id=%(s)s",
                 {"s": account},
             )
             results.key_labels += f"Account:  {accname}"
+        if acctype not in ["", None]:
+            accname = api.sql_1row(
+                conn,
+                "select accounttypes.atype_name from hacc.accounttypes where id=%(s)s",
+                {"s": acctype},
+            )
+            results.key_labels += f"Type:  {accname}"
+        if fragment not in ["", None]:
+            results.key_labels += f'Containing "{fragment}"'
+
     results.keys["report-formats"] = ["gl_summarize_total"]
     return results.json_out()
 
